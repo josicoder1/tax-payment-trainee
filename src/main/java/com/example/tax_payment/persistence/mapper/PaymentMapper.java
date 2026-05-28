@@ -3,7 +3,7 @@ package com.example.tax_payment.persistence.mapper;
 import com.example.tax_payment.domain.model.Payment;
 import com.example.tax_payment.domain.model.PaymentStatus;
 import com.example.tax_payment.domain.valueobject.Money;
-import com.example.tax_payment.domain.valueobject.PaymentAllocation;
+import com.example.tax_payment.domain.service.PaymentAllocation;
 import com.example.tax_payment.persistence.entity.PaymentJpaEntity;
 import org.springframework.stereotype.Component;
 
