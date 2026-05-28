@@ -1,4 +1,9 @@
 package com.example.tax_payment.persistence.repository;
 
-public class SpringDataPaymentRepository {
+import com.example.tax_payment.persistence.entity.PaymentJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.UUID;
+
+public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEntity, UUID> {
 }
