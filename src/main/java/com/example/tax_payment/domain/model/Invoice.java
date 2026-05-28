@@ -1,25 +1,21 @@
- package com.example.tax_payment.domain.model;
+package com.example.tax_payment.domain.model;
 
-import  com.example.tax_payment.domain.event.DomainEvent;
-import  com.example.tax_payment.domain.event.InvoicePaidEvent;
-import  com.example.tax_payment.domain.event.InvoicePartiallyPaidEvent;
-import  com.example.tax_payment.domain.valueobject.InvoiceStatus;
-import  com.example.tax_payment.domain.valueobject.Money;
-import  com.example.tax_payment.domain.valueobject.TaxPeriod;
-import  com.example.tax_payment.domain.valueobject.TaxTypeCode;
+import com.example.tax_payment.domain.event.DomainEvent;
+import com.example.tax_payment.domain.event.InvoicePaidEvent;
+import com.example.tax_payment.domain.event.InvoicePartiallyPaidEvent;
+import com.example.tax_payment.domain.exception.InvalidPaymentAmountException;
 import com.example.tax_payment.domain.exception.InvoiceAlreadyPaidException;
 import com.example.tax_payment.domain.exception.InvoiceVoidedException;
-import com.example.tax_payment.domain.exception.InvalidPaymentAmountException;
 import com.example.tax_payment.domain.exception.OverPaymentException;
+import com.example.tax_payment.domain.valueobject.InvoiceStatus;
+import com.example.tax_payment.domain.valueobject.Money;
+import com.example.tax_payment.domain.valueobject.TaxPeriod;
+import com.example.tax_payment.domain.valueobject.TaxTypeCode;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
-
-import com.example.tax_payment.domain.valueobject.Money;
-
 import java.util.UUID;
 
 public class Invoice {
@@ -67,9 +63,21 @@ public class Invoice {
         this.interestAmount = Objects.requireNonNull(interestAmount);
         this.penaltyAmount = Objects.requireNonNull(penaltyAmount);
 
-        this.totalPaidPrincipal = Money.zero();
-        this.totalPaidInterest = Money.zero();
-        this.totalPaidPenalty = Money.zero();
+        // Ensure all monetary values use same currency
+        String currency = principalAmount.getCurrency();
+
+        if (!currency.equals(interestAmount.getCurrency()) ||
+                !currency.equals(penaltyAmount.getCurrency())) {
+
+            throw new IllegalArgumentException(
+                    "All invoice money values must use the same currency"
+            );
+        }
+
+        // Initialize paid amounts with zero money in same currency
+        this.totalPaidPrincipal = Money.zero(currency);
+        this.totalPaidInterest = Money.zero(currency);
+        this.totalPaidPenalty = Money.zero(currency);
 
         this.status = InvoiceStatus.OPEN;
     }
@@ -94,7 +102,10 @@ public class Invoice {
         return status;
     }
 
-
+    // Added for PaymentAllocationService
+    public String getCurrency() {
+        return principalAmount.getCurrency();
+    }
 
     public Money getPrincipalAmount() {
         return principalAmount;
@@ -120,7 +131,6 @@ public class Invoice {
         return totalPaidPenalty;
     }
 
-
     public Money getOutstandingPrincipal() {
         return principalAmount.subtract(totalPaidPrincipal);
     }
@@ -134,18 +144,25 @@ public class Invoice {
     }
 
     public Money getTotalOutstanding() {
-         return getOutstandingPenalty()
+        return getOutstandingPenalty()
                 .add(getOutstandingInterest())
                 .add(getOutstandingPrincipal());
     }
+
     public boolean isFullyPaid() {
         return getTotalOutstanding().isZero();
     }
 
-
     public void payPenalty(Money amount) {
 
         ensureInvoicePayable();
+        ensurePositivePayment(amount);
+
+        Money outstanding = getOutstandingPenalty();
+
+        if (amount.compareTo(outstanding) > 0) {
+            throw new OverPaymentException("penalty");
+        }
 
         totalPaidPenalty = totalPaidPenalty.add(amount);
 
@@ -168,7 +185,6 @@ public class Invoice {
         recalculateStatus();
     }
 
-
     public void payPrincipal(Money amount) {
 
         ensureInvoicePayable();
@@ -185,7 +201,6 @@ public class Invoice {
         recalculateStatus();
     }
 
-
     public List<DomainEvent> pullDomainEvents() {
 
         List<DomainEvent> events = List.copyOf(domainEvents);
@@ -194,7 +209,6 @@ public class Invoice {
 
         return events;
     }
-
 
     private void recalculateStatus() {
 
