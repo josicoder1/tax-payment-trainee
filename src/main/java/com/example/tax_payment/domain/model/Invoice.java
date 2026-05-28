@@ -18,6 +18,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.example.tax_payment.domain.valueobject.Money;
+
+import java.util.UUID;
+
 public class Invoice {
 
     private final UUID id;
