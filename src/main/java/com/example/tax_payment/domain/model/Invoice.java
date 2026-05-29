@@ -11,6 +11,7 @@ import com.example.tax_payment.domain.valueobject.InvoiceStatus;
 import com.example.tax_payment.domain.valueobject.Money;
 import com.example.tax_payment.domain.valueobject.TaxPeriod;
 import com.example.tax_payment.domain.valueobject.TaxTypeCode;
+import com.example.tax_payment.domain.service.PaymentAllocation;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -264,4 +265,70 @@ public class Invoice {
 
         status = InvoiceStatus.VOIDED;
     }
+
+    public void applyPayment(PaymentAllocation allocation) {
+
+        Objects.requireNonNull(allocation);
+
+        ensureInvoicePayable();
+
+        applyPenalty(allocation.penaltyAllocated());
+        applyInterest(allocation.interestAllocated());
+        applyPrincipal(allocation.principalAllocated());
+
+        recalculateStatus();
+    }
+
+    private void applyPenalty(Money amount) {
+
+        if (amount.isZero()) {
+            return;
+        }
+
+        ensurePositivePayment(amount);
+
+        Money outstanding = getOutstandingPenalty();
+
+        if (amount.compareTo(outstanding) > 0) {
+            throw new OverPaymentException("penalty");
+        }
+
+        totalPaidPenalty = totalPaidPenalty.add(amount);
+    }
+
+    private void applyInterest(Money amount) {
+
+        if (amount.isZero()) {
+            return;
+        }
+
+        ensurePositivePayment(amount);
+
+        Money outstanding = getOutstandingInterest();
+
+        if (amount.compareTo(outstanding) > 0) {
+            throw new OverPaymentException("interest");
+        }
+
+        totalPaidInterest = totalPaidInterest.add(amount);
+    }
+
+    private void applyPrincipal(Money amount) {
+
+        if (amount.isZero()) {
+            return;
+        }
+
+        ensurePositivePayment(amount);
+
+        Money outstanding = getOutstandingPrincipal();
+
+        if (amount.compareTo(outstanding) > 0) {
+            throw new OverPaymentException("principal");
+        }
+
+        totalPaidPrincipal = totalPaidPrincipal.add(amount);
+    }
+
+
 }
