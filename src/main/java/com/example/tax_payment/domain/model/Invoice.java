@@ -154,54 +154,6 @@ public class Invoice {
         return getTotalOutstanding().isZero();
     }
 
-    public void payPenalty(Money amount) {
-
-        ensureInvoicePayable();
-        ensurePositivePayment(amount);
-
-        Money outstanding = getOutstandingPenalty();
-
-        if (amount.compareTo(outstanding) > 0) {
-            throw new OverPaymentException("penalty");
-        }
-
-        totalPaidPenalty = totalPaidPenalty.add(amount);
-
-        recalculateStatus();
-    }
-
-    public void payInterest(Money amount) {
-
-        ensureInvoicePayable();
-        ensurePositivePayment(amount);
-
-        Money outstanding = getOutstandingInterest();
-
-        if (amount.compareTo(outstanding) > 0) {
-            throw new OverPaymentException("interest");
-        }
-
-        totalPaidInterest = totalPaidInterest.add(amount);
-
-        recalculateStatus();
-    }
-
-    public void payPrincipal(Money amount) {
-
-        ensureInvoicePayable();
-        ensurePositivePayment(amount);
-
-        Money outstanding = getOutstandingPrincipal();
-
-        if (amount.compareTo(outstanding) > 0) {
-            throw new OverPaymentException("principal");
-        }
-
-        totalPaidPrincipal = totalPaidPrincipal.add(amount);
-
-        recalculateStatus();
-    }
-
     public List<DomainEvent> pullDomainEvents() {
 
         List<DomainEvent> events = List.copyOf(domainEvents);
