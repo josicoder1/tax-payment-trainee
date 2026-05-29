@@ -2,7 +2,9 @@ package com.example.tax_payment.application.port.outbound;
 
 import com.example.tax_payment.domain.event.DomainEvent;
 
-public interface OutboxRepositoryPort {
+import java.util.List;
 
-    void save(DomainEvent event);
+public interface EventPublisherPort {
+
+    void publish(List<DomainEvent> events);
 }
