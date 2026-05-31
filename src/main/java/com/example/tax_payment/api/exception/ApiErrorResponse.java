@@ -1,4 +1,9 @@
 package com.example.tax_payment.api.exception;
 
-public class ApiErrorResponse {
-}
+import java.time.Instant;
+
+public record ApiErrorResponse(
+        String message,
+        String errorCode,
+        Instant timestamp
+) {}
