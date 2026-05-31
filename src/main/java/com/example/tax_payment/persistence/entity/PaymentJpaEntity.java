@@ -1,6 +1,8 @@
 package com.example.tax_payment.persistence.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -8,6 +10,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "payments")
+@Getter
+@Setter
 public class PaymentJpaEntity {
 
     @Id
