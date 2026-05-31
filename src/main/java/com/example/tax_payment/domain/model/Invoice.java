@@ -150,6 +150,38 @@ public class Invoice {
                 .add(getOutstandingPrincipal());
     }
 
+    public static Invoice reconstitute(
+            UUID id,
+            String taxpayerTin,
+            TaxTypeCode taxType,
+            TaxPeriod taxPeriod,
+            Money principalAmount,
+            Money interestAmount,
+            Money penaltyAmount,
+            Money totalPaidPrincipal,
+            Money totalPaidInterest,
+            Money totalPaidPenalty,
+            InvoiceStatus status
+    ) {
+
+        Invoice invoice = new Invoice(
+                id,
+                taxpayerTin,
+                taxType,
+                taxPeriod,
+                principalAmount,
+                interestAmount,
+                penaltyAmount
+        );
+
+        invoice.totalPaidPrincipal = totalPaidPrincipal;
+        invoice.totalPaidInterest = totalPaidInterest;
+        invoice.totalPaidPenalty = totalPaidPenalty;
+        invoice.status = status;
+
+        return invoice;
+    }
+
     public boolean isFullyPaid() {
         return getTotalOutstanding().isZero();
     }
