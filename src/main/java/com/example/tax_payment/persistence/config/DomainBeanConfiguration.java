@@ -1,10 +1,14 @@
 package com.example.tax_payment.persistence.config;
 
-import com.example.tax_payment.persistence.repository.SpringDataPaymentRepository;
+import com.example.tax_payment.domain.service.PaymentAllocationService;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @Configuration
-@EnableJpaRepositories(basePackageClasses = SpringDataPaymentRepository.class)
-public class PersistenceConfig {
+public class DomainBeanConfiguration {
+
+    @Bean
+    public PaymentAllocationService paymentAllocationService() {
+        return new PaymentAllocationService();
+    }
 }

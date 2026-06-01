@@ -1,7 +1,10 @@
 package com.example.tax_payment.persistence.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
@@ -12,6 +15,7 @@ import java.util.UUID;
 @Table(name = "payments")
 @Getter
 @Setter
+@NoArgsConstructor
 public class PaymentJpaEntity {
 
     @Id
@@ -34,9 +38,4 @@ public class PaymentJpaEntity {
     private String referenceNumber;
 
     private String failureReason;
-
-    public PaymentJpaEntity() {
-    }
-
-    // getters/setters
 }
