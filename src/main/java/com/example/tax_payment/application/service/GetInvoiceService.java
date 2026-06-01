@@ -5,7 +5,10 @@ import com.example.tax_payment.application.port.inbound.GetInvoiceUseCase;
 import com.example.tax_payment.application.port.outbound.InvoiceRepositoryPort;
 import com.example.tax_payment.application.query.GetInvoiceQuery;
 import com.example.tax_payment.application.result.InvoiceResult;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
+@Service
 public class GetInvoiceService implements GetInvoiceUseCase {
 
     private final InvoiceRepositoryPort repository;

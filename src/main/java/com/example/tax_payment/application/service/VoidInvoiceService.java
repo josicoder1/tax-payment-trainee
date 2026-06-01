@@ -4,7 +4,9 @@ import com.example.tax_payment.application.command.VoidInvoiceCommand;
 import com.example.tax_payment.application.port.inbound.VoidInvoiceUseCase;
 import com.example.tax_payment.application.port.outbound.InvoiceRepositoryPort;
 import com.example.tax_payment.domain.model.Invoice;
+import org.springframework.stereotype.Service;
 
+@Service
 public class VoidInvoiceService implements VoidInvoiceUseCase {
 
     private final InvoiceRepositoryPort repository;

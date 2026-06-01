@@ -13,7 +13,11 @@ import com.example.tax_payment.domain.model.Payment;
 import com.example.tax_payment.domain.service.PaymentAllocation;
 import com.example.tax_payment.domain.service.PaymentAllocationService;
 import com.example.tax_payment.domain.valueobject.Money;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
 
+@Service
+@Transactional
 public class PayInvoiceService implements PayInvoiceUseCase {
 
     private final InvoiceRepositoryPort invoiceRepository;

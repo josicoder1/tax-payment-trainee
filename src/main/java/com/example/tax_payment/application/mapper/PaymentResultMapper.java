@@ -4,7 +4,9 @@ import com.example.tax_payment.application.result.AllocationResult;
 import com.example.tax_payment.application.result.PaymentResult;
 import com.example.tax_payment.domain.model.Payment;
 import com.example.tax_payment.domain.service.PaymentAllocation;
+import org.springframework.stereotype.Component;
 
+@Component
 public class PaymentResultMapper {
 
     public PaymentResult toResult(
