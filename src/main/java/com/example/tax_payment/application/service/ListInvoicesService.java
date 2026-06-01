@@ -5,9 +5,11 @@ import com.example.tax_payment.application.port.inbound.ListInvoicesUseCase;
 import com.example.tax_payment.application.port.outbound.InvoiceRepositoryPort;
 import com.example.tax_payment.application.query.ListInvoicesQuery;
 import com.example.tax_payment.application.result.InvoiceSummaryResult;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class ListInvoicesService implements ListInvoicesUseCase {
 
     private final InvoiceRepositoryPort repository;

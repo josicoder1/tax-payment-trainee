@@ -3,7 +3,9 @@ package com.example.tax_payment.application.mapper;
 import com.example.tax_payment.application.result.InvoiceResult;
 import com.example.tax_payment.application.result.InvoiceSummaryResult;
 import com.example.tax_payment.domain.model.Invoice;
+import org.springframework.stereotype.Component;
 
+@Component
 public class InvoiceResultMapper {
 
     public InvoiceResult toResult(Invoice invoice) {
@@ -12,7 +14,7 @@ public class InvoiceResultMapper {
                 invoice.getId(),
                 invoice.getTaxpayerTin(),
                 invoice.getTaxType().value(),
-                invoice.getTaxPeriod().toString(),
+                invoice.getTaxPeriod().label(),
                 invoice.getStatus().name(),
 
                 invoice.getPrincipalAmount().getAmount(),
@@ -34,7 +36,7 @@ public class InvoiceResultMapper {
         return new InvoiceSummaryResult(
                 invoice.getId(),
                 invoice.getTaxType().value(),
-                invoice.getTaxPeriod().toString(),
+                invoice.getTaxPeriod().label(),
                 invoice.getStatus().name(),
                 invoice.getTotalOutstanding().getAmount(),
                 invoice.getCurrency()
