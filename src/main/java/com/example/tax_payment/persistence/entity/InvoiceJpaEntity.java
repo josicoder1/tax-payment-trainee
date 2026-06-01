@@ -1,6 +1,8 @@
 package com.example.tax_payment.persistence.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,6 +15,7 @@ import java.util.UUID;
 @Table(name = "invoices")
 @Getter
 @Setter
+@NoArgsConstructor
 public class InvoiceJpaEntity {
 
     @Id
@@ -43,9 +46,4 @@ public class InvoiceJpaEntity {
     private BigDecimal totalPaidPenalty;
 
     private String status;
-
-    public InvoiceJpaEntity() {
-    }
-
-    // getters/setters
 }

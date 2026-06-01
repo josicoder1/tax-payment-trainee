@@ -5,24 +5,20 @@ import com.example.tax_payment.domain.model.Invoice;
 import com.example.tax_payment.domain.valueobject.InvoiceStatus;
 import com.example.tax_payment.persistence.mapper.InvoicePersistenceMapper;
 import com.example.tax_payment.persistence.repository.SpringDataInvoiceRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Repository
+@RequiredArgsConstructor
 public class InvoiceRepositoryAdapter
         implements InvoiceRepositoryPort {
 
     private final SpringDataInvoiceRepository repository;
     private final InvoicePersistenceMapper mapper;
-
-    public InvoiceRepositoryAdapter(
-            SpringDataInvoiceRepository repository,
-            InvoicePersistenceMapper mapper
-    ) {
-        this.repository = repository;
-        this.mapper = mapper;
-    }
 
     @Override
     public Invoice save(Invoice invoice) {
@@ -48,20 +44,35 @@ public class InvoiceRepositoryAdapter
             String taxPeriod
     ) {
 
-        return repository
-                .findByTaxpayerTinAndTaxTypeAndTaxPeriodAndStatus(
-                        taxpayerTin,
-                        taxType,
-                        taxPeriod,
-                        InvoiceStatus.OPEN.name()
+        return repository.findByTaxpayerTin(
+                        taxpayerTin
                 )
-                .map(mapper::toDomain);
+                .stream()
+                .map(mapper::toDomain)
+                .filter(i ->
+                        i.getStatus() == InvoiceStatus.OPEN
+                )
+                .filter(i ->
+                        i.getTaxType()
+                                .value()
+                                .equals(taxType)
+                )
+                .filter(i ->
+                        i.getTaxPeriod()
+                                .label()
+                                .equals(taxPeriod)
+                )
+                .findFirst();
     }
 
     @Override
-    public List<Invoice> findByTaxpayerTin(String taxpayerTin) {
+    public List<Invoice> findByTaxpayerTin(
+            String taxpayerTin
+    ) {
 
-        return repository.findByTaxpayerTin(taxpayerTin)
+        return repository.findByTaxpayerTin(
+                        taxpayerTin
+                )
                 .stream()
                 .map(mapper::toDomain)
                 .toList();
