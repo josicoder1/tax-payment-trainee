@@ -13,23 +13,17 @@ public class PaymentController {
 
     private final PayInvoiceUseCase payInvoiceUseCase;
 
-    public PaymentController(
-            PayInvoiceUseCase payInvoiceUseCase
-    ) {
+    public PaymentController(PayInvoiceUseCase payInvoiceUseCase) {
         this.payInvoiceUseCase = payInvoiceUseCase;
     }
 
     @PostMapping
-    public PaymentResponse pay(
-            @RequestBody PayInvoiceRequest request
-    ) {
+    public PaymentResponse pay(@RequestBody PayInvoiceRequest request) {
 
         PaymentResult result =
                 payInvoiceUseCase.pay(
                         new PayInvoiceCommand(
-                                request.taxpayerTin(),
-                                request.taxType(),
-                                request.taxPeriod(),
+                                request.invoiceId(),
                                 request.amount(),
                                 request.currency()
                         )
