@@ -16,6 +16,8 @@ import com.example.tax_payment.domain.valueobject.Money;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @Transactional
 public class PayInvoiceService implements PayInvoiceUseCase {
@@ -47,34 +49,29 @@ public class PayInvoiceService implements PayInvoiceUseCase {
     @Override
     public PaymentResult pay(PayInvoiceCommand command) {
 
-        Invoice invoice = invoiceRepository.findOpenInvoice(
-                command.taxpayerTin(),
-                command.taxType(),
-                command.taxPeriod()
-        ).orElseThrow(() ->
-                new IllegalArgumentException("Invoice not found")
-        );
+        Invoice invoice = invoiceRepository.findById(command.invoiceId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Invoice not found")
+                );
 
         Money paymentMoney = new Money(
                 command.amount(),
                 command.currency()
         );
 
+        // Payment can still carry TIN for audit (OK)
         Payment payment = new Payment(
                 paymentMoney,
-                command.taxpayerTin(),
-                command.taxType(),
-                command.taxPeriod()
+                invoice.getTaxpayerTin(),
+                invoice.getTaxType().toString(),
+                invoice.getTaxPeriod().toString()
         );
 
         boolean success = gatewayPort.process(payment);
 
         if (!success) {
-
             payment.markFailed("Gateway processing failed");
-
             paymentRepository.save(payment);
-
             return paymentResultMapper.toResult(payment, null);
         }
 
@@ -86,7 +83,6 @@ public class PayInvoiceService implements PayInvoiceUseCase {
         payment.markSuccess();
 
         invoiceRepository.save(invoice);
-
         paymentRepository.save(payment);
 
         eventPublisher.publish(invoice.pullDomainEvents());
