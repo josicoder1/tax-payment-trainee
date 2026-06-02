@@ -38,34 +38,6 @@ public class InvoiceRepositoryAdapter
     }
 
     @Override
-    public Optional<Invoice> findOpenInvoice(
-            String taxpayerTin,
-            String taxType,
-            String taxPeriod
-    ) {
-
-        return repository.findByTaxpayerTin(
-                        taxpayerTin
-                )
-                .stream()
-                .map(mapper::toDomain)
-                .filter(i ->
-                        i.getStatus() == InvoiceStatus.OPEN
-                )
-                .filter(i ->
-                        i.getTaxType()
-                                .value()
-                                .equals(taxType)
-                )
-                .filter(i ->
-                        i.getTaxPeriod()
-                                .label()
-                                .equals(taxPeriod)
-                )
-                .findFirst();
-    }
-
-    @Override
     public List<Invoice> findByTaxpayerTin(
             String taxpayerTin
     ) {
