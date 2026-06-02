@@ -1,9 +1,9 @@
-package com.example.tax_payment.application.result;
+package com.example.tax_payment.api.dto.response;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public record InvoiceResult(
+public record InvoiceResponse(
         UUID invoiceId,
         String taxpayerTin,
         String taxType,
@@ -21,5 +21,4 @@ public record InvoiceResult(
         BigDecimal outstandingAmount,
 
         String currency
-) {
-}
+) {}

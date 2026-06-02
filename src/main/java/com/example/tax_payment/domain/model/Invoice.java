@@ -11,6 +11,7 @@ import com.example.tax_payment.domain.valueobject.InvoiceStatus;
 import com.example.tax_payment.domain.valueobject.Money;
 import com.example.tax_payment.domain.valueobject.TaxPeriod;
 import com.example.tax_payment.domain.valueobject.TaxTypeCode;
+import com.example.tax_payment.domain.service.PaymentAllocation;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -149,56 +150,40 @@ public class Invoice {
                 .add(getOutstandingPrincipal());
     }
 
+    public static Invoice reconstitute(
+            UUID id,
+            String taxpayerTin,
+            TaxTypeCode taxType,
+            TaxPeriod taxPeriod,
+            Money principalAmount,
+            Money interestAmount,
+            Money penaltyAmount,
+            Money totalPaidPrincipal,
+            Money totalPaidInterest,
+            Money totalPaidPenalty,
+            InvoiceStatus status
+    ) {
+
+        Invoice invoice = new Invoice(
+                id,
+                taxpayerTin,
+                taxType,
+                taxPeriod,
+                principalAmount,
+                interestAmount,
+                penaltyAmount
+        );
+
+        invoice.totalPaidPrincipal = totalPaidPrincipal;
+        invoice.totalPaidInterest = totalPaidInterest;
+        invoice.totalPaidPenalty = totalPaidPenalty;
+        invoice.status = status;
+
+        return invoice;
+    }
+
     public boolean isFullyPaid() {
         return getTotalOutstanding().isZero();
-    }
-
-    public void payPenalty(Money amount) {
-
-        ensureInvoicePayable();
-        ensurePositivePayment(amount);
-
-        Money outstanding = getOutstandingPenalty();
-
-        if (amount.compareTo(outstanding) > 0) {
-            throw new OverPaymentException("penalty");
-        }
-
-        totalPaidPenalty = totalPaidPenalty.add(amount);
-
-        recalculateStatus();
-    }
-
-    public void payInterest(Money amount) {
-
-        ensureInvoicePayable();
-        ensurePositivePayment(amount);
-
-        Money outstanding = getOutstandingInterest();
-
-        if (amount.compareTo(outstanding) > 0) {
-            throw new OverPaymentException("interest");
-        }
-
-        totalPaidInterest = totalPaidInterest.add(amount);
-
-        recalculateStatus();
-    }
-
-    public void payPrincipal(Money amount) {
-
-        ensureInvoicePayable();
-        ensurePositivePayment(amount);
-
-        Money outstanding = getOutstandingPrincipal();
-
-        if (amount.compareTo(outstanding) > 0) {
-            throw new OverPaymentException("principal");
-        }
-
-        totalPaidPrincipal = totalPaidPrincipal.add(amount);
-
-        recalculateStatus();
     }
 
     public List<DomainEvent> pullDomainEvents() {
@@ -264,4 +249,70 @@ public class Invoice {
 
         status = InvoiceStatus.VOIDED;
     }
+
+    public void applyPayment(PaymentAllocation allocation) {
+
+        Objects.requireNonNull(allocation);
+
+        ensureInvoicePayable();
+
+        applyPenalty(allocation.penaltyAllocated());
+        applyInterest(allocation.interestAllocated());
+        applyPrincipal(allocation.principalAllocated());
+
+        recalculateStatus();
+    }
+
+    private void applyPenalty(Money amount) {
+
+        if (amount.isZero()) {
+            return;
+        }
+
+        ensurePositivePayment(amount);
+
+        Money outstanding = getOutstandingPenalty();
+
+        if (amount.compareTo(outstanding) > 0) {
+            throw new OverPaymentException("penalty");
+        }
+
+        totalPaidPenalty = totalPaidPenalty.add(amount);
+    }
+
+    private void applyInterest(Money amount) {
+
+        if (amount.isZero()) {
+            return;
+        }
+
+        ensurePositivePayment(amount);
+
+        Money outstanding = getOutstandingInterest();
+
+        if (amount.compareTo(outstanding) > 0) {
+            throw new OverPaymentException("interest");
+        }
+
+        totalPaidInterest = totalPaidInterest.add(amount);
+    }
+
+    private void applyPrincipal(Money amount) {
+
+        if (amount.isZero()) {
+            return;
+        }
+
+        ensurePositivePayment(amount);
+
+        Money outstanding = getOutstandingPrincipal();
+
+        if (amount.compareTo(outstanding) > 0) {
+            throw new OverPaymentException("principal");
+        }
+
+        totalPaidPrincipal = totalPaidPrincipal.add(amount);
+    }
+
+
 }

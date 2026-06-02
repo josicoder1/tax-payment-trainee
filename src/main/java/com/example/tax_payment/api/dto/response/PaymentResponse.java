@@ -1,14 +1,12 @@
-package com.example.tax_payment.application.result;
+package com.example.tax_payment.api.dto.response;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public record PaymentResult(
+public record PaymentResponse(
         UUID paymentId,
         String referenceNumber,
         String status,
         String failureReason,
-        Instant createdAt,
-        AllocationResult allocation
-) {
-}
+        Instant createdAt
+) {}
