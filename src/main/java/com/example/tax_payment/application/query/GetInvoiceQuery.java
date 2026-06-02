@@ -1,4 +1,8 @@
 package com.example.tax_payment.application.query;
 
-public class GetInvoiceQuery {
+import java.util.UUID;
+
+public record GetInvoiceQuery(
+        UUID invoiceId
+) {
 }
