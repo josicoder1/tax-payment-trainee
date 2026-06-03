@@ -15,6 +15,38 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+# Application specific
+application-local.properties
+application-dev.properties
+*.pid
 
 # Environment files
 .env
+
+.env.local
+.env.*.local
+
+# Docker volumes and data
+postgres_data/
+kafka_data/
+zookeeper_data/
+docker-compose.override.yml
+
+# IDE specific
+.vscode/
+.settings/
+.classpath
+.project
+
+# Temporary and backup files
+*~
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Spring Boot DevTools
+.spring-boot-devtools.properties
+
+# Log directory
+logs/

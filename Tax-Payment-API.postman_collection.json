@@ -1,0 +1,532 @@
+{
+	"info": {
+		"_postman_id": "tax-payment-api-collection",
+		"name": "Tax Payment API",
+		"description": "Complete API collection for Tax Payment Application with Invoice and Payment endpoints. This collection demonstrates the full workflow: creating invoices, listing invoices, making payments, and testing the outbox pattern for Kafka event publishing.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Invoices",
+			"item": [
+				{
+					"name": "Create Invoice",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"invoiceId\", jsonData.invoiceId);",
+									"    pm.environment.set(\"invoiceId\", jsonData.invoiceId);",
+									"    console.log(\"Invoice ID saved: \" + jsonData.invoiceId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"taxpayerTin\": \"123456789\",\n  \"taxTypeCode\": \"VAT\",\n  \"taxYear\": 2024,\n  \"taxMonth\": 12,\n  \"principalAmount\": 1000.00,\n  \"interestAmount\": 50.00,\n  \"penaltyAmount\": 25.00,\n  \"currency\": \"USD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							]
+						},
+						"description": "Creates a new tax invoice with principal, interest, and penalty amounts. The invoice ID is automatically saved to collection variables for use in subsequent requests."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Invoice - High Amount (Triggers Payment Failure)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"highAmountInvoiceId\", jsonData.invoiceId);",
+									"    console.log(\"High amount invoice ID saved: \" + jsonData.invoiceId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"taxpayerTin\": \"987654321\",\n  \"taxTypeCode\": \"INCOME\",\n  \"taxYear\": 2024,\n  \"taxMonth\": 11,\n  \"principalAmount\": 5000.00,\n  \"interestAmount\": 100.00,\n  \"penaltyAmount\": 75.00,\n  \"currency\": \"USD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							]
+						},
+						"description": "Creates an invoice with high principal amount (>1000) which will trigger payment gateway failure for testing error scenarios."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoice by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"{{invoiceId}}"
+							]
+						},
+						"description": "Retrieves detailed information about a specific invoice including amounts, status, and outstanding balance."
+					},
+					"response": []
+				},
+				{
+					"name": "List Invoices by Taxpayer TIN",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices?taxpayerTin=123456789",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices"
+							],
+							"query": [
+								{
+									"key": "taxpayerTin",
+									"value": "123456789",
+									"description": "Taxpayer Tax Identification Number"
+								}
+							]
+						},
+						"description": "Lists all invoices for a specific taxpayer, showing summary information including status and outstanding amounts."
+					},
+					"response": []
+				},
+				{
+					"name": "Void Invoice",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/void",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"{{invoiceId}}",
+								"void"
+							]
+						},
+						"description": "Voids an invoice, marking it as cancelled. Only unpaid or partially paid invoices can be voided."
+					},
+					"response": []
+				}
+			],
+			"description": "Invoice management endpoints for creating, retrieving, listing, and voiding tax invoices."
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "Pay Invoice - Full Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"paymentId\", jsonData.paymentId);",
+									"    console.log(\"Payment ID saved: \" + jsonData.paymentId);",
+									"    console.log(\"Payment Status: \" + jsonData.status);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"amount\": 1075.00,\n  \"currency\": \"USD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments"
+							]
+						},
+						"description": "Makes a full payment on an invoice. Amount covers principal (1000) + interest (50) + penalty (25) = 1075. Payment allocation follows the order: Penalty → Interest → Principal."
+					},
+					"response": []
+				},
+				{
+					"name": "Pay Invoice - Partial Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"amount\": 500.00,\n  \"currency\": \"USD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments"
+							]
+						},
+						"description": "Makes a partial payment. The system allocates payment in priority order: Penalty first (25), then Interest (50), then Principal (425)."
+					},
+					"response": []
+				},
+				{
+					"name": "Pay Invoice - High Amount (Will Fail)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoiceId\": \"{{highAmountInvoiceId}}\",\n  \"amount\": 5175.00,\n  \"currency\": \"USD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"payments"
+							]
+						},
+						"description": "Attempts payment on a high-amount invoice. The mock payment gateway will fail for amounts >= 1000, demonstrating error handling and the outbox pattern for event publishing."
+					},
+					"response": []
+				}
+			],
+			"description": "Payment endpoints for processing invoice payments with automatic allocation to penalty, interest, and principal."
+		},
+		{
+			"name": "Test Scenarios",
+			"item": [
+				{
+					"name": "Scenario 1: Complete Invoice Lifecycle",
+					"item": [
+						{
+							"name": "1. Create Invoice",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Invoice created successfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.status).to.eql(\"OPEN\");",
+											"    pm.collectionVariables.set(\"scenarioInvoiceId\", jsonData.invoiceId);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"taxpayerTin\": \"SCENARIO-123\",\n  \"taxTypeCode\": \"SALES\",\n  \"taxYear\": 2024,\n  \"taxMonth\": 10,\n  \"principalAmount\": 800.00,\n  \"interestAmount\": 40.00,\n  \"penaltyAmount\": 20.00,\n  \"currency\": \"USD\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/invoices",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"invoices"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2. Make Partial Payment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Payment successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.status).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"invoiceId\": \"{{scenarioInvoiceId}}\",\n  \"amount\": 100.00,\n  \"currency\": \"USD\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/payments",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"payments"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3. Check Invoice Status (Partially Paid)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Invoice is partially paid\", function () {",
+											"    pm.response.to.have.status(200);",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.status).to.eql(\"PARTIALLY_PAID\");",
+											"    pm.expect(parseFloat(jsonData.outstandingAmount)).to.be.below(860);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/invoices/{{scenarioInvoiceId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"invoices",
+										"{{scenarioInvoiceId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "4. Pay Remaining Balance",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Final payment successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.status).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"invoiceId\": \"{{scenarioInvoiceId}}\",\n  \"amount\": 760.00,\n  \"currency\": \"USD\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/payments",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"payments"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "5. Verify Invoice Fully Paid",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Invoice is fully paid\", function () {",
+											"    pm.response.to.have.status(200);",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.status).to.eql(\"PAID\");",
+											"    pm.expect(parseFloat(jsonData.outstandingAmount)).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/invoices/{{scenarioInvoiceId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"invoices",
+										"{{scenarioInvoiceId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "End-to-end test scenario demonstrating complete invoice lifecycle: create → partial payment → check status → full payment → verify completion"
+				}
+			],
+			"description": "Complete test scenarios demonstrating typical workflows and edge cases"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "invoiceId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "highAmountInvoiceId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "paymentId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "scenarioInvoiceId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
