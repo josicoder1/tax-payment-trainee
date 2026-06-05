@@ -16,6 +16,7 @@ import com.example.tax_payment.domain.valueobject.Money;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -37,6 +38,7 @@ public class PayInvoiceService implements PayInvoiceUseCase {
             EventPublisherPort eventPublisher,
             PaymentAllocationService allocationService,
             PaymentResultMapper paymentResultMapper
+
     ) {
         this.invoiceRepository = invoiceRepository;
         this.paymentRepository = paymentRepository;
@@ -44,15 +46,30 @@ public class PayInvoiceService implements PayInvoiceUseCase {
         this.eventPublisher = eventPublisher;
         this.allocationService = allocationService;
         this.paymentResultMapper = paymentResultMapper;
+
     }
 
     @Override
     public PaymentResult pay(PayInvoiceCommand command) {
+        Optional<Payment> existingPayment =
+                paymentRepository.findByIdempotencyKey(
+                        command.idempotencyKey()
+                );
+
+        if (existingPayment.isPresent()) {
+
+            return paymentResultMapper.toResult(
+                    existingPayment.get(),
+                    null
+            );
+        }
 
         Invoice invoice = invoiceRepository.findById(command.invoiceId())
                 .orElseThrow(() ->
                         new IllegalArgumentException("Invoice not found")
                 );
+
+
 
         Money paymentMoney = new Money(
                 command.amount(),
@@ -64,7 +81,8 @@ public class PayInvoiceService implements PayInvoiceUseCase {
                 paymentMoney,
                 invoice.getTaxpayerTin(),
                 invoice.getTaxType().toString(),
-                invoice.getTaxPeriod().toString()
+                invoice.getTaxPeriod().toString(),
+                command.idempotencyKey()
         );
 
         boolean success = gatewayPort.process(payment);
