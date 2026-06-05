@@ -19,6 +19,7 @@ import java.util.UUID;
 public class PaymentJpaEntity {
 
     @Id
+
     private UUID id;
 
     private BigDecimal amount;
@@ -38,4 +39,6 @@ public class PaymentJpaEntity {
     private String referenceNumber;
 
     private String failureReason;
+
+    private String idempotencyKey;
 }

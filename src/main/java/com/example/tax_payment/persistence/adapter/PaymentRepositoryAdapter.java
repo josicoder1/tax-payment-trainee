@@ -34,4 +34,14 @@ public class PaymentRepositoryAdapter
         return repository.findById(id)
                 .map(mapper::toDomain);
     }
+
+    @Override
+    public Optional<Payment> findByIdempotencyKey(
+            String idempotencyKey
+    ) {
+
+        return repository
+                .findByIdempotencyKey(idempotencyKey)
+                .map(mapper::toDomain);
+    }
 }
