@@ -18,6 +18,9 @@ public class PaymentPersistenceMapper {
         entity.setAmount(
                 payment.getAmount().getAmount()
         );
+        entity.setIdempotencyKey(
+                payment.getIdempotencyKey()
+        );
 
         entity.setCurrency(
                 payment.getAmount().getCurrency()
@@ -64,7 +67,8 @@ public class PaymentPersistenceMapper {
                         ),
                         entity.getTaxpayerId(),
                         entity.getTaxType(),
-                        entity.getTaxPeriod()
+                        entity.getTaxPeriod(),
+                        entity.getIdempotencyKey()
                 );
 
         payment.setId(entity.getId());
@@ -78,7 +82,9 @@ public class PaymentPersistenceMapper {
         payment.setCreatedAt(
                 entity.getCreatedAt()
         );
-
+        payment.setIdempotencyKey(
+                entity.getIdempotencyKey()
+        );
         payment.setReferenceNumber(
                 entity.getReferenceNumber()
         );
