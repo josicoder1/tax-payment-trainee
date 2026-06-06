@@ -732,9 +732,9 @@ spring.jpa.hibernate.ddl-auto=update
 docker exec -it tax-payment-postgres pg_isready -U postgres
 
 # Check connection settings in application.properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/tax_payment_trainee
+spring.datasource.url=jdbc:postgresql://localhost:5432/tax_payment
 spring.datasource.username=postgres
-spring.datasource.password=postgres123
+spring.datasource.password=postgres
 ```
 
 ---
