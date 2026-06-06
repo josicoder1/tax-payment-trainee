@@ -781,7 +781,7 @@ KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka
 
 ### Documentation
 
-- 📖 [Postman Testing Guide](POSTMAN_GUIDE.md)
+- Postman collection: `Tax-Payment-API.postman_collection.json`
 
 ### External References
 
