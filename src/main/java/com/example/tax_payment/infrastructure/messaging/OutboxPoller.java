@@ -59,7 +59,7 @@ public class OutboxPoller {
      * - Logs error and continues on failure (will retry in next cycle)
      */
     @Scheduled(fixedDelayString = "${outbox.poller.fixed-delay-ms:5000}")
-    @Transactional
+    // Intentionally not transactional: publishing may be slow; DB updates happen in markAsPublished() transactions.
     public void pollAndPublish() {
         List<OutboxEventJpaEntity> unpublishedEvents = 
             outboxRepositoryAdapter.findUnpublishedEvents(batchSize);
