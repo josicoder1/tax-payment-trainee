@@ -723,9 +723,7 @@ docker-compose logs kafka
 # In application.properties:
 spring.jpa.hibernate.ddl-auto=update
 
-# Or run SQL migration manually
-docker exec -i tax-payment-postgres psql -U postgres -d tax_payment_trainee < src/main/resources/db/migration/V2__create_outbox_table.sql
-```
+# Tables are managed by Hibernate when ddl-auto=update is enabled.
 
 #### Problem: Connection Refused
 
