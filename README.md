@@ -120,7 +120,7 @@ This project demonstrates enterprise-grade software architecture patterns and pr
 
 | Category | Technology | Version |
 |----------|------------|---------|
-| **Language** | Java | 21|
+| **Language** | Java | 17 |
 | **Framework** | Spring Boot | 4.0.6 |
 | **Database** | PostgreSQL | 15 |
 | **Messaging** | Apache Kafka | 7.5.0 (Confluent) |
