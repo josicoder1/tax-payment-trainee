@@ -60,10 +60,5 @@ public class KafkaConfig {
      *
      * @return ObjectMapper configured for Java 8 time type serialization
      */
-    @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        return mapper;
-    }
+    // Intentionally no ObjectMapper @Bean here; rely on Spring Boot auto-configuration.
 }
