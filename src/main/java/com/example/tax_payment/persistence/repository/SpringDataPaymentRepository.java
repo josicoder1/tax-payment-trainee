@@ -11,7 +11,7 @@ import java.util.UUID;
 @Repository
 public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEntity, UUID> {
 
-    Optional<PaymentJpaEntity> findByReferenceNumber(String referenceNumber);
+    Optional<PaymentJpaEntity> findFirstByReferenceNumber(String referenceNumber);
 
     List<PaymentJpaEntity> findByTaxpayerId(String taxpayerId);
 }
