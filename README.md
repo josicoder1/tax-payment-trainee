@@ -91,7 +91,7 @@ This project demonstrates enterprise-grade software architecture patterns and pr
    │              ├──────────────>│               │                │
    │              │               │               │                │
    │              │<──────────────┤               │                │
-   │ 202 Accepted │               │               │                │
+   │ 200 OK       │               │               │                │
    │<─────────────┤               │               │                │
    │              │               │               │                │
    │              │               │ Poll & Publish│                │
