@@ -532,7 +532,7 @@ docker exec -it tax-payment-kafka kafka-console-consumer \
 
 **Check Outbox Table:**
 ```bash
-docker exec -it tax-payment-postgres psql -U postgres -d tax_payment_trainee
+docker exec -it tax-payment-postgres psql -U postgres -d tax_payment
 
 # Query unpublished events
 SELECT id, event_type, published, created_at, published_at
