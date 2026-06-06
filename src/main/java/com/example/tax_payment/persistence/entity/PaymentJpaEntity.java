@@ -7,23 +7,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(
-        name = "payments",
-        indexes = @Index(name = "idx_payments_reference_number", columnList = "referenceNumber"),
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_payments_reference_number",
-                columnNames = "referenceNumber"
-        )
-)
+@Table(name = "payments")
 public class PaymentJpaEntity {
 
     @Id
@@ -52,7 +43,7 @@ public class PaymentJpaEntity {
     @Column(nullable = false)
     private Instant createdAt;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String referenceNumber;
 
     @Column(length = 500)
