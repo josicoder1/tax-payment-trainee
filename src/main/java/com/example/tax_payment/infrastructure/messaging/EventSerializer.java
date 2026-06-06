@@ -25,15 +25,15 @@ public class EventSerializer {
             this.objectMapper.registerModule(new JavaTimeModule());
         }
         
-        // Configure polymorphic type handling for DomainEvent hierarchy
+        // Configure polymorphic type handling for DomainEvent hierarchy (restrict to our event package)
         BasicPolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
-                .allowIfBaseType(DomainEvent.class)
+                .allowIfSubType("com.example.tax_payment.domain.event.")
                 .build();
-        
-        this.objectMapper.activateDefaultTyping(
+
+        this.objectMapper.activateDefaultTypingAsProperty(
                 typeValidator,
-                ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY
+                ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE,
+                "@type"
         );
     }
 
