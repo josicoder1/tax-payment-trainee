@@ -43,19 +43,21 @@ public class KafkaEventPublisherAdapter implements EventPublisherPort {
     @Override
     public void publish(List<DomainEvent> events) {
         for (DomainEvent event : events) {
+            String topicName = deriveTopicName(event);
+            String eventJson = eventSerializer.serialize(event);
+
             try {
-                String topicName = deriveTopicName(event);
-                String eventJson = eventSerializer.serialize(event);
-                
-                kafkaTemplate.send(topicName, eventJson);
-                
+                kafkaTemplate.send(topicName, eventJson).get();
                 log.debug("Published event {} to topic {}", event.getClass().getSimpleName(), topicName);
-            } catch (Exception e) {
-                log.error("Failed to publish event: type={}, event={}, error={}", 
-                         event.getClass().getName(), 
-                         event.toString(), 
-                         e.getMessage(), 
-                         e);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                log.error("Interrupted while publishing event: type={}, topic={}", event.getClass().getName(), topicName, ie);
+                throw new IllegalStateException("Interrupted while publishing event to Kafka", ie);
+            } catch (java.util.concurrent.ExecutionException ee) {
+                log.error("Failed to publish event: type={}, topic={}, error={}", event.getClass().getName(), topicName, ee.getMessage(), ee);
+                throw new IllegalStateException("Failed to publish event to Kafka", ee.getCause());
+            } catch (RuntimeException e) {
+                log.error("Failed to publish event: type={}, topic={}, error={}", event.getClass().getName(), topicName, e.getMessage(), e);
                 throw e;
             }
         }
