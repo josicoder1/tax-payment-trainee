@@ -17,8 +17,8 @@ import java.util.List;
  * Background poller that retrieves unpublished events from the outbox table
  * and publishes them to Kafka. Implements the outbox pattern for reliable
  * event delivery even when Kafka is temporarily unavailable.
- * 
- * Enabled only in dev/prod profiles via ConditionalOnProperty.
+ *
+ * Enabled only when `outbox.poller.enabled=true`.
  */
 @Component
 @ConditionalOnProperty(
