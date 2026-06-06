@@ -579,7 +579,7 @@ mvn clean install -DskipTests
 5. **Pay Invoice - Full Payment** - Pays remaining balance
 6. **Get Invoice by ID** - Verify PAID status
 
-📖 **Complete testing guide**: [POSTMAN_GUIDE.md](POSTMAN_GUIDE.md)
+📖 Postman collection: `Tax-Payment-API.postman_collection.json`
 
 ---
 
