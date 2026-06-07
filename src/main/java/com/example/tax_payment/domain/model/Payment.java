@@ -2,12 +2,15 @@ package com.example.tax_payment.domain.model;
 
 import com.example.tax_payment.domain.valueobject.Money;
 import com.example.tax_payment.domain.valueobject.PaymentStatus;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Instant;
 import java.util.UUID;
 
+@Setter
+@Getter
 public class Payment {
-
     private UUID id;
     private Money amount;
     private String taxpayerId;
@@ -16,17 +19,23 @@ public class Payment {
     private PaymentStatus status;
     private Instant createdAt;
     private String referenceNumber;
-    private String failureReason;   // added for audit
+    private String failureReason;
+    // Setters (for reconstruction)
+    // Getters
+    String idempotencyKey;
+    // added for audit
 
-    public Payment(Money amount, String taxpayerId, String taxType, String taxPeriod) {
+    public Payment(Money amount, String taxpayerId, String taxType, String taxPeriod, String idempotencyKey) {
         this.id = UUID.randomUUID();
         this.amount = amount;
         this.taxpayerId = taxpayerId;
         this.taxType = taxType;
         this.taxPeriod = taxPeriod;
+        this.idempotencyKey = idempotencyKey;
         this.status = PaymentStatus.PENDING;
         this.createdAt = Instant.now();
         this.referenceNumber = "REF-" + System.currentTimeMillis();
+
     }
 
     public void markSuccess() {
@@ -45,25 +54,4 @@ public class Payment {
         this.failureReason = reason;
     }
 
-    // Getters
-    public UUID getId() { return id; }
-    public Money getAmount() { return amount; }
-    public String getTaxpayerId() { return taxpayerId; }
-    public String getTaxType() { return taxType; }
-    public String getTaxPeriod() { return taxPeriod; }
-    public PaymentStatus getStatus() { return status; }
-    public Instant getCreatedAt() { return createdAt; }
-    public String getReferenceNumber() { return referenceNumber; }
-    public String getFailureReason() { return failureReason; }
-
-    // Setters (for reconstruction)
-    public void setId(UUID id) { this.id = id; }
-    public void setAmount(Money amount) { this.amount = amount; }
-    public void setTaxpayerId(String taxpayerId) { this.taxpayerId = taxpayerId; }
-    public void setTaxType(String taxType) { this.taxType = taxType; }
-    public void setTaxPeriod(String taxPeriod) { this.taxPeriod = taxPeriod; }
-    public void setStatus(PaymentStatus status) { this.status = status; }
-    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
-    public void setReferenceNumber(String referenceNumber) { this.referenceNumber = referenceNumber; }
-    public void setFailureReason(String failureReason) { this.failureReason = failureReason; }
 }

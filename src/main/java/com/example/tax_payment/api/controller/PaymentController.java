@@ -22,10 +22,13 @@ public class PaymentController {
 
         PaymentResult result =
                 payInvoiceUseCase.pay(
+
                         new PayInvoiceCommand(
+                                request.idempotencyKey(),
                                 request.invoiceId(),
                                 request.amount(),
                                 request.currency()
+
                         )
                 );
 
@@ -35,6 +38,7 @@ public class PaymentController {
                 result.status(),
                 result.failureReason(),
                 result.createdAt()
+
         );
     }
 }
