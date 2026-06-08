@@ -3,10 +3,20 @@ package com.example.tax_payment.persistence.mapper;
 import com.example.tax_payment.domain.model.Invoice;
 import com.example.tax_payment.domain.valueobject.*;
 import com.example.tax_payment.persistence.entity.InvoiceJpaEntity;
+import com.example.tax_payment.persistence.repository.SpringDataInvoiceStatusRepository;
 import org.springframework.stereotype.Component;
 
 @Component
 public class InvoicePersistenceMapper {
+
+    private final SpringDataInvoiceStatusRepository statusRepository;
+
+    public InvoicePersistenceMapper(
+            SpringDataInvoiceStatusRepository statusRepository
+    ) {
+        this.statusRepository = statusRepository;
+    }
+
 
     public InvoiceJpaEntity toEntity(Invoice invoice) {
 
@@ -58,9 +68,15 @@ public class InvoicePersistenceMapper {
         );
 
         entity.setStatus(
-                invoice.getStatus().name()
+                statusRepository.findByCode(
+                        invoice.getStatus().name()
+                ).orElseThrow(
+                        () -> new IllegalStateException(
+                                "Unknown invoice status: "
+                                        + invoice.getStatus()
+                        )
+                )
         );
-
         return entity;
     }
 
@@ -113,7 +129,7 @@ public class InvoicePersistenceMapper {
                 ),
 
                 InvoiceStatus.valueOf(
-                        entity.getStatus()
+                        entity.getStatus().getCode()
                 )
         );
     }
