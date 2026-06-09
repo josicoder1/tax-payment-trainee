@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 /**
  * Serializes and deserializes domain events to/from JSON format.
  * Supports polymorphic event types and Java 8 time types (Instant, LocalDateTime).
+ * thus
  */
 @Component
 public class EventSerializer {

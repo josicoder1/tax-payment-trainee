@@ -15,11 +15,10 @@ import java.util.List;
  * Publishes domain events to Apache Kafka topics using topic naming convention:
  * Event class name (e.g., InvoicePaidEvent) → topic name (e.g., "invoice-paid").
  * 
- * Marked as @Primary to be used as the default EventPublisherPort implementation
- * in production environments.
+ * This adapter is used by the OutboxPoller to publish events from the outbox table
+ * to Kafka. It is NOT used directly by application services (OutboxEventPublisherAdapter is).
  */
 @Component
-@Primary
 public class KafkaEventPublisherAdapter implements EventPublisherPort {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaEventPublisherAdapter.class);

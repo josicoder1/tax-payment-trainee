@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * Enables scheduling for background tasks like the outbox poller.
  * 
  * Scheduling is disabled in the test profile to prevent background
- * interference during deterministic testing.
+ * interference during deterministic testing.f
  */
 @Configuration
 @EnableScheduling

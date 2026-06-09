@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Kafka configuration for event publishing infrastructure.
+ * Kafka configuration for event publishing infrastructure.t
  * Provides KafkaTemplate for reliable message publishing to Apache Kafka.
  */
 @Configuration

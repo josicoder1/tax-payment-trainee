@@ -3,6 +3,7 @@ package com.example.tax_payment.infrastructure.messaging;
 import com.example.tax_payment.domain.event.DomainEvent;
 import com.example.tax_payment.persistence.adapter.OutboxRepositoryAdapter;
 import com.example.tax_payment.persistence.entity.OutboxEventJpaEntity;
+import com.example.tax_payment.persistence.mapper.OutboxEventMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +33,7 @@ public class OutboxPoller {
 
     private final OutboxRepositoryAdapter outboxRepositoryAdapter;
     private final KafkaEventPublisherAdapter kafkaEventPublisher;
-    private final EventSerializer eventSerializer;
+    private final OutboxEventMapper outboxEventMapper;
     
     @Value("${outbox.poller.batch-size:100}")
     private int batchSize;
@@ -40,11 +41,11 @@ public class OutboxPoller {
     public OutboxPoller(
             OutboxRepositoryAdapter outboxRepositoryAdapter,
             KafkaEventPublisherAdapter kafkaEventPublisher,
-            EventSerializer eventSerializer
+            OutboxEventMapper outboxEventMapper
     ) {
         this.outboxRepositoryAdapter = outboxRepositoryAdapter;
         this.kafkaEventPublisher = kafkaEventPublisher;
-        this.eventSerializer = eventSerializer;
+        this.outboxEventMapper = outboxEventMapper;
     }
 
     /**
@@ -73,8 +74,8 @@ public class OutboxPoller {
         
         for (OutboxEventJpaEntity eventEntity : unpublishedEvents) {
             try {
-                // Deserialize event from JSON
-                DomainEvent event = eventSerializer.deserialize(eventEntity.getEventData());
+                // Deserialize event from JSON using mapper
+                DomainEvent event = outboxEventMapper.toDomainEvent(eventEntity);
                 
                 // Publish to Kafka
                 kafkaEventPublisher.publish(List.of(event));
