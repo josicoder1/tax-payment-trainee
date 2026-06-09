@@ -8,7 +8,7 @@ import lombok.Setter;
 
 import java.time.Instant;
 import java.util.UUID;
-
+/* outbox table implementation*/
 @Entity
 @Table(name = "outbox_events")
 @Getter

@@ -2,8 +2,8 @@ package com.example.tax_payment.persistence.adapter;
 
 import com.example.tax_payment.application.port.outbound.OutboxRepositoryPort;
 import com.example.tax_payment.domain.event.DomainEvent;
-import com.example.tax_payment.infrastructure.messaging.EventSerializer;
 import com.example.tax_payment.persistence.entity.OutboxEventJpaEntity;
+import com.example.tax_payment.persistence.mapper.OutboxEventMapper;
 import com.example.tax_payment.persistence.repository.SpringDataOutboxRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,14 +23,14 @@ import java.util.UUID;
 public class OutboxRepositoryAdapter implements OutboxRepositoryPort {
 
     private final SpringDataOutboxRepository springDataOutboxRepository;
-    private final EventSerializer eventSerializer;
+    private final OutboxEventMapper outboxEventMapper;
 
     public OutboxRepositoryAdapter(
             SpringDataOutboxRepository springDataOutboxRepository,
-            EventSerializer eventSerializer
+            OutboxEventMapper outboxEventMapper
     ) {
         this.springDataOutboxRepository = springDataOutboxRepository;
-        this.eventSerializer = eventSerializer;
+        this.outboxEventMapper = outboxEventMapper;
     }
 
     /**
@@ -42,15 +42,7 @@ public class OutboxRepositoryAdapter implements OutboxRepositoryPort {
     @Override
     @Transactional
     public void save(DomainEvent event) {
-        OutboxEventJpaEntity entity = new OutboxEventJpaEntity();
-        entity.setId(UUID.randomUUID());
-        entity.setEventType(event.getClass().getName());
-        entity.setEventData(eventSerializer.serialize(event));
-        entity.setOccurredAt(event.occurredAt());
-        entity.setPublished(false);
-        entity.setPublishedAt(null);
-        entity.setCreatedAt(Instant.now());
-
+        OutboxEventJpaEntity entity = outboxEventMapper.toEntity(event);
         springDataOutboxRepository.save(entity);
     }
 
