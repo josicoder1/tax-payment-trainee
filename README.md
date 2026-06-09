@@ -579,7 +579,7 @@ mvn clean install -DskipTests
 5. **Pay Invoice - Full Payment** - Pays remaining balance
 6. **Get Invoice by ID** - Verify PAID status
 
-📖 **Complete testing guide**: [POSTMAN_GUIDE.md](POSTMAN_GUIDE.md)
+
 
 ---
 
@@ -618,7 +618,7 @@ docker-compose logs -f zookeeper
 
 ```bash
 # Connect to PostgreSQL
-docker exec -it tax-payment-postgres psql -U postgres -d tax_payment_trainee
+docker exec -it tax-payment-postgres psql -U postgres -d tax_payment
 
 # View invoices
 SELECT * FROM invoices ORDER BY id;
@@ -723,9 +723,6 @@ docker-compose logs kafka
 # In application.properties:
 spring.jpa.hibernate.ddl-auto=update
 
-# Or run SQL migration manually
-docker exec -i tax-payment-postgres psql -U postgres -d tax_payment_trainee < src/main/resources/db/migration/V2__create_outbox_table.sql
-```
 
 #### Problem: Connection Refused
 
@@ -734,7 +731,7 @@ docker exec -i tax-payment-postgres psql -U postgres -d tax_payment_trainee < sr
 docker exec -it tax-payment-postgres pg_isready -U postgres
 
 # Check connection settings in application.properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/tax_payment_trainee
+spring.datasource.url=jdbc:postgresql://localhost:5432/tax_payment
 spring.datasource.username=postgres
 spring.datasource.password=postgres123
 ```
@@ -761,7 +758,7 @@ outbox.poller.batch-size=100
 
 **Check Outbox Table:**
 ```bash
-docker exec -it tax-payment-postgres psql -U postgres -d tax_payment_trainee
+docker exec -it tax-payment-postgres psql -U postgres -d tax_payment_
 
 SELECT * FROM outbox_events WHERE published = false;
 ```
@@ -778,12 +775,6 @@ KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka
 ```
 
 ---
-
-## 📚 Additional Resources
-
-### Documentation
-
-- 📖 [Postman Testing Guide](POSTMAN_GUIDE.md)
 
 ### External References
 

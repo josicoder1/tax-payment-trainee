@@ -10,6 +10,7 @@ out/
 build/
 
 # Logs
+#logs
 *.log
 
 # OS files

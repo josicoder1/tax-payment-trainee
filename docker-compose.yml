@@ -2,7 +2,7 @@ services:
   # PostgreSQL Database Service
   postgres:
     image: postgres:15
-    container_name: tax-payment-postgres
+    container_name: tax-payment
     environment:
       POSTGRES_DB: tax_payment
       POSTGRES_USER: postgres
