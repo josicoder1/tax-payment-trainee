@@ -2,11 +2,8 @@ package com.example.tax_payment.persistence.adapter;
 
 import com.example.tax_payment.application.port.outbound.EventPublisherPort;
 import com.example.tax_payment.domain.event.DomainEvent;
-import org.springframework.stereotype.Component;
-
 import java.util.List;
 
-@Component
 public class SimpleEventPublisherAdapter
         implements EventPublisherPort {
 

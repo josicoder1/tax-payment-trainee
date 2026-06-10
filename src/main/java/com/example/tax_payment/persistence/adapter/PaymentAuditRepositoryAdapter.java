@@ -1,12 +1,14 @@
 package com.example.tax_payment.persistence.adapter;
 
 import com.example.tax_payment.application.port.outbound.PaymentAuditRepositoryPort;
+import com.example.tax_payment.application.result.PaymentAuditResult;
 import com.example.tax_payment.persistence.entity.PaymentAuditJpaEntity;
 import com.example.tax_payment.persistence.repository.SpringDataPaymentAuditRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -39,5 +41,26 @@ public class PaymentAuditRepositoryAdapter implements PaymentAuditRepositoryPort
         entity.setCreatedAt(Instant.now());
 
         repository.save(entity);
+    }
+
+    @Override
+    public List<PaymentAuditResult> findByPaymentId(UUID paymentId) {
+        return repository.findByPaymentIdOrderByCreatedAtAsc(paymentId).stream()
+                .map(this::toResult)
+                .toList();
+    }
+
+    private PaymentAuditResult toResult(PaymentAuditJpaEntity entity) {
+        return new PaymentAuditResult(
+                entity.getId(),
+                entity.getPaymentId(),
+                entity.getEventType(),
+                entity.getOldStatus(),
+                entity.getNewStatus(),
+                entity.getReason(),
+                entity.getIdempotencyKey(),
+                entity.getPayload(),
+                entity.getCreatedAt()
+        );
     }
 }
