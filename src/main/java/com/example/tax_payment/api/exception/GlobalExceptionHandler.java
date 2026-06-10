@@ -1,6 +1,8 @@
 package com.example.tax_payment.api.exception;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -15,6 +17,17 @@ public class GlobalExceptionHandler {
         return new ApiErrorResponse(
                 ex.getMessage(),
                 "NOT_FOUND",
+                Instant.now()
+        );
+    }
+
+    @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrorResponse handleBadRequest(Exception ex) {
+
+        return new ApiErrorResponse(
+                ex.getMessage(),
+                "BAD_REQUEST",
                 Instant.now()
         );
     }

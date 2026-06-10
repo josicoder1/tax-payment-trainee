@@ -13,6 +13,7 @@ import com.example.tax_payment.application.query.GetInvoiceQuery;
 import com.example.tax_payment.application.query.ListInvoicesQuery;
 import com.example.tax_payment.application.result.InvoiceResult;
 import com.example.tax_payment.application.result.InvoiceSummaryResult;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,7 +42,7 @@ public class InvoiceController {
 
     @PostMapping
     public InvoiceResponse create(
-            @RequestBody CreateInvoiceRequest request
+            @Valid @RequestBody CreateInvoiceRequest request
     ) {
 
         InvoiceResult result =
