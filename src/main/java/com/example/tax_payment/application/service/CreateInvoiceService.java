@@ -4,8 +4,10 @@ import com.example.tax_payment.application.command.CreateInvoiceCommand;
 import com.example.tax_payment.application.mapper.InvoiceResultMapper;
 import com.example.tax_payment.application.port.inbound.CreateInvoiceUseCase;
 import com.example.tax_payment.application.port.outbound.InvoiceRepositoryPort;
+import com.example.tax_payment.application.port.outbound.TransactionRepositoryPort;
 import com.example.tax_payment.application.result.InvoiceResult;
 import com.example.tax_payment.domain.model.Invoice;
+import com.example.tax_payment.domain.model.Transaction;
 import com.example.tax_payment.domain.valueobject.Money;
 import com.example.tax_payment.domain.valueobject.TaxPeriod;
 import com.example.tax_payment.domain.valueobject.TaxTypeCode;
@@ -21,13 +23,16 @@ public class CreateInvoiceService
         implements CreateInvoiceUseCase {
 
     private final InvoiceRepositoryPort repository;
+    private final TransactionRepositoryPort transactionRepository;
     private final InvoiceResultMapper mapper;
 
     public CreateInvoiceService(
             InvoiceRepositoryPort repository,
+            TransactionRepositoryPort transactionRepository,
             InvoiceResultMapper mapper
     ) {
         this.repository = repository;
+        this.transactionRepository = transactionRepository;
         this.mapper = mapper;
     }
 
@@ -62,8 +67,16 @@ public class CreateInvoiceService
                 )
         );
 
-        Invoice saved =
-                repository.save(invoice);
+        Invoice saved = repository.save(invoice);
+
+        transactionRepository.save(
+                Transaction.invoiceCreated(
+                        saved.getId(),
+                        saved.getPrincipalAmount()
+                                .add(saved.getInterestAmount())
+                                .add(saved.getPenaltyAmount())
+                )
+        );
 
         return mapper.toResult(saved);
     }

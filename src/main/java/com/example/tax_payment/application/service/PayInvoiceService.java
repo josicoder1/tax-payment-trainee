@@ -8,9 +8,11 @@ import com.example.tax_payment.application.port.outbound.PaymentAuditRepositoryP
 import com.example.tax_payment.application.port.outbound.InvoiceRepositoryPort;
 import com.example.tax_payment.application.port.outbound.PaymentGatewayPort;
 import com.example.tax_payment.application.port.outbound.PaymentRepositoryPort;
+import com.example.tax_payment.application.port.outbound.TransactionRepositoryPort;
 import com.example.tax_payment.application.result.PaymentResult;
 import com.example.tax_payment.domain.model.Invoice;
 import com.example.tax_payment.domain.model.Payment;
+import com.example.tax_payment.domain.model.Transaction;
 import com.example.tax_payment.domain.service.PaymentAllocation;
 import com.example.tax_payment.domain.service.PaymentAllocationService;
 import com.example.tax_payment.domain.valueobject.Money;
@@ -31,6 +33,7 @@ public class PayInvoiceService implements PayInvoiceUseCase {
     private final PaymentGatewayPort gatewayPort;
     private final EventPublisherPort eventPublisher;
     private final PaymentAuditRepositoryPort paymentAuditRepository;
+    private final TransactionRepositoryPort transactionRepository;
 
     private final PaymentAllocationService allocationService;
     private final PaymentResultMapper paymentResultMapper;
@@ -41,6 +44,7 @@ public class PayInvoiceService implements PayInvoiceUseCase {
             PaymentGatewayPort gatewayPort,
             EventPublisherPort eventPublisher,
             PaymentAuditRepositoryPort paymentAuditRepository,
+            TransactionRepositoryPort transactionRepository,
             PaymentAllocationService allocationService,
             PaymentResultMapper paymentResultMapper,
             InvoiceAuditService invoiceAuditService
@@ -51,6 +55,7 @@ public class PayInvoiceService implements PayInvoiceUseCase {
         this.gatewayPort = gatewayPort;
         this.eventPublisher = eventPublisher;
         this.paymentAuditRepository = paymentAuditRepository;
+        this.transactionRepository = transactionRepository;
         this.allocationService = allocationService;
         this.paymentResultMapper = paymentResultMapper;
         this.invoiceAuditService = invoiceAuditService;
@@ -165,6 +170,14 @@ public class PayInvoiceService implements PayInvoiceUseCase {
 
         invoiceRepository.save(invoice);
         paymentRepository.save(payment);
+
+        transactionRepository.save(
+                Transaction.paymentReceived(
+                        invoice.getId(),
+                        payment.getId(),
+                        paymentMoney
+                )
+        );
 
         eventPublisher.publish(invoice.pullDomainEvents());
 
