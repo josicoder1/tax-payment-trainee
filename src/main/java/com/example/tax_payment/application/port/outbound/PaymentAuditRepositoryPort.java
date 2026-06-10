@@ -1,5 +1,8 @@
 package com.example.tax_payment.application.port.outbound;
 
+import com.example.tax_payment.application.result.PaymentAuditResult;
+
+import java.util.List;
 import java.util.UUID;
 
 public interface PaymentAuditRepositoryPort {
@@ -15,4 +18,5 @@ public interface PaymentAuditRepositoryPort {
             String payload
     );
 
+    List<PaymentAuditResult> findByPaymentId(UUID paymentId);
 }
