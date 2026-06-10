@@ -24,6 +24,8 @@ import java.util.UUID;
 @Transactional
 public class PayInvoiceService implements PayInvoiceUseCase {
 
+    private final InvoiceAuditService invoiceAuditService;
+
     private final InvoiceRepositoryPort invoiceRepository;
     private final PaymentRepositoryPort paymentRepository;
     private final PaymentGatewayPort gatewayPort;
@@ -40,7 +42,8 @@ public class PayInvoiceService implements PayInvoiceUseCase {
             EventPublisherPort eventPublisher,
             PaymentAuditRepositoryPort paymentAuditRepository,
             PaymentAllocationService allocationService,
-            PaymentResultMapper paymentResultMapper
+            PaymentResultMapper paymentResultMapper,
+            InvoiceAuditService invoiceAuditService
 
     ) {
         this.invoiceRepository = invoiceRepository;
@@ -50,6 +53,8 @@ public class PayInvoiceService implements PayInvoiceUseCase {
         this.paymentAuditRepository = paymentAuditRepository;
         this.allocationService = allocationService;
         this.paymentResultMapper = paymentResultMapper;
+        this.invoiceAuditService = invoiceAuditService;
+
     }
 
     @Override
@@ -142,8 +147,19 @@ public class PayInvoiceService implements PayInvoiceUseCase {
 
         PaymentAllocation allocation =
                 allocationService.allocate(invoice, paymentMoney);
+        String oldStatus =
+                invoice.getStatus().name();
 
         invoice.applyPayment(allocation);
+        String newStatus = invoice.getStatus().name();
+
+        if (!oldStatus.equals(newStatus)) {
+            invoiceAuditService.audit(
+                    invoice.getId(),
+                    oldStatus,
+                    newStatus
+            );
+        }
 
         payment.markSuccess();
 
