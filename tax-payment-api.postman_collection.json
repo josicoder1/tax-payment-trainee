@@ -1,0 +1,425 @@
+{
+	"info": {
+		"_postman_id": "f5a044db-d7c7-4560-a292-0b0c6114eb1d",
+		"name": "Tax Payment API Demo",
+		"description": "Demo collection for the Tax Payment Trainee application.\n\n**Setup:**\n1. Start app: `mvn spring-boot:run`\n2. Import this collection\n3. Run requests in order (Invoices → Payments → Transactions)\n\n**Variables auto-set:**\n- `invoiceId` — after Create Invoice\n- `paymentId` — after Pay Invoice\n- `lastIdempotencyKey` — after Pay Invoice (for idempotency demo)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "0. Health Check",
+			"item": [
+				{
+					"name": "Actuator Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actuator/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["actuator", "health"]
+						},
+						"description": "Verify the application is running before the demo."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Invoices",
+			"item": [
+				{
+					"name": "1. Create Invoice",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    if (body.invoiceId) {",
+									"        pm.collectionVariables.set('invoiceId', body.invoiceId);",
+									"        console.log('invoiceId saved:', body.invoiceId);",
+									"    }",
+									"}",
+									"pm.test('Invoice created', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.status).to.eql('OPEN');",
+									"    pm.expect(body.outstandingAmount).to.eql(220);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"taxpayerTin\": \"123456789\",\n  \"taxTypeCode\": \"VAT\",\n  \"taxYear\": 2026,\n  \"taxMonth\": 6,\n  \"principalAmount\": 200.00,\n  \"interestAmount\": 15.00,\n  \"penaltyAmount\": 5.00,\n  \"currency\": \"USD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "invoices"]
+						},
+						"description": "Creates a new tax invoice.\n\n**Totals:** principal 200 + interest 15 + penalty 5 = **220 USD outstanding**\n\n**DB tables updated:** `invoices`, `transactions` (INVOICE_CREATED)"
+					},
+					"response": []
+				},
+				{
+					"name": "2. Get Invoice by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Invoice retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().invoiceId).to.eql(pm.collectionVariables.get('invoiceId'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "invoices", "{{invoiceId}}"]
+						},
+						"description": "Retrieves full invoice details including paid amounts and outstanding balance.\n\nUses `{{invoiceId}}` from step 1."
+					},
+					"response": []
+				},
+				{
+					"name": "3. List Invoices by TIN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Invoice list returned', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json()).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices?taxpayerTin=123456789",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "invoices"],
+							"query": [
+								{
+									"key": "taxpayerTin",
+									"value": "123456789"
+								}
+							]
+						},
+						"description": "Lists all invoices for taxpayer TIN 123456789 (summary view)."
+					},
+					"response": []
+				},
+				{
+					"name": "4. Void Invoice",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Invoice voided', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/invoices/{{invoiceId}}/void",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "invoices", "{{invoiceId}}", "void"]
+						},
+						"description": "Voids an OPEN or PARTIALLY_PAID invoice.\n\n**Demo tip:** Create a NEW invoice first — you cannot void a PAID invoice.\n\n**DB:** status → VOIDED, `transactions` gets INVOICE_VOIDED"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "5. Pay Invoice (50 USD partial)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const key = pm.variables.replaceIn('{{$guid}}');",
+									"pm.collectionVariables.set('lastIdempotencyKey', key);"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    if (body.paymentId) {",
+									"        pm.collectionVariables.set('paymentId', body.paymentId);",
+									"        console.log('paymentId saved:', body.paymentId);",
+									"    }",
+									"}",
+									"pm.test('Payment successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().status).to.eql('SUCCESS');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idempotencyKey\": \"{{lastIdempotencyKey}}\",\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"amount\": 50.00,\n  \"currency\": \"USD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments"]
+						},
+						"description": "Partial payment of 50 USD.\n\n**Allocation order:** penalty (5) → interest (15) → principal (30)\n\nOutstanding: 220 → 170. Status: PARTIALLY_PAID\n\n**DB:** `payments`, `payment_audit`, `transactions`, `invoices` updated"
+					},
+					"response": []
+				},
+				{
+					"name": "6. Pay Invoice — DUPLICATE (idempotency demo)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Same payment returned (idempotent)', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().paymentId).to.eql(pm.collectionVariables.get('paymentId'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idempotencyKey\": \"{{lastIdempotencyKey}}\",\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"amount\": 50.00,\n  \"currency\": \"USD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments"]
+						},
+						"description": "Sends the SAME idempotency key again.\n\n**Expected:** Same paymentId, no double charge. Check `payment_audit` for DUPLICATE_REQUEST."
+					},
+					"response": []
+				},
+				{
+					"name": "7. Get Payment Audit Log",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Audit log returned', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json()).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/payments/{{paymentId}}/audit",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments", "{{paymentId}}", "audit"]
+						},
+						"description": "Audit trail: REQUESTED → SUCCESS (and DUPLICATE_REQUEST if step 6 was run).\n\nCompare with `payment_audit` table in pgAdmin."
+					},
+					"response": []
+				},
+				{
+					"name": "8. Pay Invoice (170 USD — pay in full)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.collectionVariables.set('lastIdempotencyKey', pm.variables.replaceIn('{{$guid}}'));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Final payment successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().status).to.eql('SUCCESS');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"idempotencyKey\": \"{{lastIdempotencyKey}}\",\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"amount\": 170.00,\n  \"currency\": \"USD\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/payments",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "payments"]
+						},
+						"description": "Pays remaining 170 USD. Invoice status becomes PAID.\n\nCheck `outbox_events` in pgAdmin for InvoicePaidEvent."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Transactions",
+			"item": [
+				{
+					"name": "9. List All Transactions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Transactions returned', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json()).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "transactions"]
+						},
+						"description": "Full business ledger: INVOICE_CREATED, PAYMENT_RECEIVED, INVOICE_VOIDED"
+					},
+					"response": []
+				},
+				{
+					"name": "10. List Transactions by Invoice",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Invoice transactions returned', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/transactions/by-invoice/{{invoiceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "transactions", "by-invoice", "{{invoiceId}}"]
+						},
+						"description": "Ledger entries filtered to the current invoice."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "invoiceId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "paymentId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "lastIdempotencyKey",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
