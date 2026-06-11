@@ -40,7 +40,8 @@ You (Postman)  →  sends request  →  Spring Boot App  →  saves/reads  →  
 | **Payment** | Money paid against an invoice |
 | **Idempotency key** | A unique ID for a payment. If you send the same key twice, you are **not charged twice** |
 | **Audit** | A log of what happened step by step |
-| **Transaction (ledger)** | A record of business events: invoice created, payment received, invoice voided |
+| **Transaction** | A record of business events: invoice created, payment received, invoice voided |
+| **Ledger entry** | Double-entry accounting row (DEBIT / CREDIT) for each payment — CASH and TAX_REVENUE |
 
 ### Payment rule (very important for demo)
 
@@ -69,13 +70,21 @@ Customer pays **50**:
 Open a terminal in the project folder and run:
 
 ```bash
-cd /home/josi-coder/Documents/demo/tax-payment-trainee
+cd /home/josi-coder/Documents/latest/tax-payment-trainee
 docker compose up -d postgres
 ```
 
 **What this does:** Starts PostgreSQL in Docker on port 5432.
 
-If you already have PostgreSQL running with `tax_payment_db`, you can skip Docker.
+**Important:** Docker Compose creates database `tax_payment` with user `postgres` / password `postgres`. The Spring Boot app expects `tax_payment_db` with user `tax_payment_user` (see section 1.2). You must run the SQL in 1.2 even when using Docker.
+
+Optional — for outbox → Kafka publishing (advanced):
+
+```bash
+docker compose up -d
+```
+
+This also starts Zookeeper and Kafka on port 9092. The app runs without Kafka, but the background outbox poller will log errors until Kafka is up.
 
 ---
 
@@ -104,7 +113,7 @@ GRANT ALL ON SCHEMA public TO tax_payment_user;
 In terminal:
 
 ```bash
-cd /home/josi-coder/Documents/demo/tax-payment-trainee
+cd /home/josi-coder/Documents/latest/tax-payment-trainee
 mvn spring-boot:run
 ```
 
@@ -193,8 +202,10 @@ ORDER BY table_name;
 | `invoice_status` | Status names: OPEN, PARTIALLY_PAID, PAID, VOIDED |
 | `payments` | All payment records |
 | `payment_audit` | Step-by-step log for each payment |
-| `transactions` | Business ledger (created, paid, voided) |
-| `outbox_events` | Events waiting to be published (advanced topic) |
+| `transactions` | Business event log (created, paid, voided) |
+| `ledger_entries` | Double-entry accounting (DEBIT CASH, CREDIT TAX_REVENUE per payment) |
+| `invoice_audit` | Status change history for invoices (OPEN → PARTIALLY_PAID → PAID) |
+| `outbox_events` | Domain events waiting to be published to Kafka (advanced topic) |
 
 **Say to audience:** "Every API call you will see in Postman also leaves data in these tables."
 
@@ -491,6 +502,17 @@ LIMIT 5;
 
 You should see `PAYMENT_RECEIVED`.
 
+**E) Financial ledger (double-entry):**
+
+```sql
+SELECT account, type, amount, currency, payment_id
+FROM ledger_entries
+ORDER BY created_at DESC
+LIMIT 6;
+```
+
+You should see two rows per payment: `DEBIT` on `CASH` and `CREDIT` on `TAX_REVENUE` (same amount).
+
 ---
 
 ## STEP 5 — Idempotency (send same payment twice)
@@ -694,6 +716,52 @@ Try to pay a voided invoice → app returns error. Good to show rules are enforc
 
 ---
 
+## STEP 11 — Financial Ledger API (optional bonus)
+
+### What this step does
+Shows the double-entry accounting rows created on each payment (separate from the `transactions` business log).
+
+### Postman (manual request)
+
+1. Create a new request: **GET** `{{baseUrl}}/api/ledger`
+2. Click **Send**
+
+### What you should see
+A list of ledger entries. After one 50 USD payment you should see:
+
+| account | type | amount |
+|---------|------|--------|
+| CASH | DEBIT | 50.00 |
+| TAX_REVENUE | CREDIT | 50.00 |
+
+### What to say
+> "Every payment creates two ledger rows — money in CASH, revenue in TAX_REVENUE. This is separate from the business transaction log."
+
+### pgAdmin
+
+```sql
+SELECT account, type, amount, currency, invoice_id, payment_id, created_at
+FROM ledger_entries
+ORDER BY created_at DESC;
+```
+
+---
+
+## STEP 12 — Download PDFs (optional bonus)
+
+After creating an invoice or completing a payment, you can download PDF documents in a browser or Postman.
+
+| Document | Method | URL |
+|----------|--------|-----|
+| Invoice PDF | GET | `http://localhost:8080/api/invoices/{invoiceId}/pdf` |
+| Payment receipt | GET | `http://localhost:8080/api/payments/{paymentId}/receipt` |
+
+Replace `{invoiceId}` / `{paymentId}` with values from Postman variables.
+
+In Postman: send the request → **Save Response** → **Save to a file** to get the PDF.
+
+---
+
 ## Part 4 — All endpoints (quick reference)
 
 | Step | Method | URL | What it does |
@@ -705,8 +773,11 @@ Try to pay a voided invoice → app returns error. Good to show rules are enforc
 | 4 | PUT | `/api/invoices/{id}/void` | Cancel invoice |
 | 5 | POST | `/api/payments` | Pay invoice |
 | 6 | GET | `/api/payments/{id}/audit` | Payment audit log |
-| 7 | GET | `/api/transactions` | All ledger entries |
-| 8 | GET | `/api/transactions/by-invoice/{id}` | Ledger for one invoice |
+| 7 | GET | `/api/transactions` | All business events |
+| 8 | GET | `/api/transactions/by-invoice/{id}` | Events for one invoice |
+| 9 | GET | `/api/ledger` | Financial ledger (debit/credit) |
+| 10 | GET | `/api/invoices/{id}/pdf` | Download invoice PDF |
+| 11 | GET | `/api/payments/{id}/receipt` | Download payment receipt PDF |
 
 Full URL example: `http://localhost:8080/api/invoices`
 
@@ -722,6 +793,8 @@ Full URL example: `http://localhost:8080/api/invoices`
 | Void fails | Invoice is already PAID → create new invoice |
 | Pay fails "exceeds balance" | Amount too high → pay less or check outstanding |
 | Pay fails on voided invoice | Expected — voided invoices cannot be paid |
+| Kafka connection errors in logs | Start full stack: `docker compose up -d` (or ignore — app still works) |
+| Docker DB but app won't connect | App needs `tax_payment_db` / `tax_payment_user` — run SQL from section 1.2 |
 
 ---
 
@@ -746,7 +819,7 @@ Full URL example: `http://localhost:8080/api/invoices`
 > "Invoice voided. Cannot pay anymore."
 
 **Closing (30 seconds):**
-> "Every action in Postman is stored in the database. We have invoices, payments, audit logs, and a transaction ledger. This is how real payment systems keep data safe and traceable."
+> "Every action in Postman is stored in the database. We have invoices, payments, audit logs, a business transaction log, and a double-entry financial ledger. This is how real payment systems keep data safe and traceable."
 
 ---
 
@@ -767,13 +840,17 @@ DEMO ORDER:
   6. Payment audit      → REQUESTED, SUCCESS
   7. Pay 170            → status PAID
   8. List transactions  → ledger
-  9. Create NEW invoice → then Void → status VOIDED
+  9. List by invoice    → events for one invoice
+  10. Create NEW invoice → then Void → status VOIDED
+  11. (bonus) GET /api/ledger → DEBIT CASH + CREDIT TAX_REVENUE
+  12. (bonus) PDF receipt / invoice
 
 PGADMIN QUICK CHECK:
   SELECT * FROM invoices ORDER BY id DESC LIMIT 3;
   SELECT * FROM payments ORDER BY created_at DESC LIMIT 3;
   SELECT * FROM payment_audit ORDER BY created_at DESC LIMIT 5;
   SELECT * FROM transactions ORDER BY created_at DESC LIMIT 5;
+  SELECT * FROM ledger_entries ORDER BY created_at DESC LIMIT 6;
 ```
 
 ---
