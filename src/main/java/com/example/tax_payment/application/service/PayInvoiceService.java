@@ -4,6 +4,7 @@ import com.example.tax_payment.application.command.PayInvoiceCommand;
 import com.example.tax_payment.application.mapper.PaymentResultMapper;
 import com.example.tax_payment.application.port.inbound.PayInvoiceUseCase;
 import com.example.tax_payment.application.port.outbound.EventPublisherPort;
+import com.example.tax_payment.application.port.outbound.LedgerEntryRepositoryPort;
 import com.example.tax_payment.application.port.outbound.PaymentAuditRepositoryPort;
 import com.example.tax_payment.application.port.outbound.InvoiceRepositoryPort;
 import com.example.tax_payment.application.port.outbound.PaymentGatewayPort;
@@ -11,6 +12,7 @@ import com.example.tax_payment.application.port.outbound.PaymentRepositoryPort;
 import com.example.tax_payment.application.port.outbound.TransactionRepositoryPort;
 import com.example.tax_payment.application.result.PaymentResult;
 import com.example.tax_payment.domain.model.Invoice;
+import com.example.tax_payment.domain.model.LedgerEntry;
 import com.example.tax_payment.domain.model.Payment;
 import com.example.tax_payment.domain.model.Transaction;
 import com.example.tax_payment.domain.service.PaymentAllocation;
@@ -34,6 +36,7 @@ public class PayInvoiceService implements PayInvoiceUseCase {
     private final EventPublisherPort eventPublisher;
     private final PaymentAuditRepositoryPort paymentAuditRepository;
     private final TransactionRepositoryPort transactionRepository;
+    private final LedgerEntryRepositoryPort ledgerEntryRepository;
 
     private final PaymentAllocationService allocationService;
     private final PaymentResultMapper paymentResultMapper;
@@ -45,6 +48,7 @@ public class PayInvoiceService implements PayInvoiceUseCase {
             EventPublisherPort eventPublisher,
             PaymentAuditRepositoryPort paymentAuditRepository,
             TransactionRepositoryPort transactionRepository,
+            LedgerEntryRepositoryPort ledgerEntryRepository,
             PaymentAllocationService allocationService,
             PaymentResultMapper paymentResultMapper,
             InvoiceAuditService invoiceAuditService
@@ -56,6 +60,7 @@ public class PayInvoiceService implements PayInvoiceUseCase {
         this.eventPublisher = eventPublisher;
         this.paymentAuditRepository = paymentAuditRepository;
         this.transactionRepository = transactionRepository;
+        this.ledgerEntryRepository = ledgerEntryRepository;
         this.allocationService = allocationService;
         this.paymentResultMapper = paymentResultMapper;
         this.invoiceAuditService = invoiceAuditService;
@@ -171,10 +176,18 @@ public class PayInvoiceService implements PayInvoiceUseCase {
         invoiceRepository.save(invoice);
         paymentRepository.save(payment);
 
-        transactionRepository.save(
-                Transaction.paymentReceived(
+        Transaction transaction = Transaction.paymentReceived(
+                invoice.getId(),
+                payment.getId(),
+                paymentMoney
+        );
+        transactionRepository.save(transaction);
+        ledgerEntryRepository.saveAll(
+                LedgerEntry.forPaymentReceived(
                         invoice.getId(),
                         payment.getId(),
+                        transaction.getId(),
+                        allocation,
                         paymentMoney
                 )
         );
