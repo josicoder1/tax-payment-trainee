@@ -398,6 +398,66 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Ledger",
+			"item": [
+				{
+					"name": "11. List All Ledger Entries",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Ledger entries returned', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json()).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/ledger-entries",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "ledger-entries"]
+						},
+						"description": "Double-entry ledger with DEBIT/CREDIT per account (RECEIVABLE, CASH, PENALTY, INTEREST, PRINCIPAL)."
+					},
+					"response": []
+				},
+				{
+					"name": "12. List Ledger Entries by Invoice",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Invoice ledger entries returned', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/ledger-entries/by-invoice/{{invoiceId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "ledger-entries", "by-invoice", "{{invoiceId}}"]
+						},
+						"description": "Debit/credit ledger entries filtered to the current invoice."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"variable": [

@@ -34,13 +34,24 @@ FROM payment_audit
 WHERE payment_id = '{{paymentId}}'
 ORDER BY created_at;
 
--- 6. Transaction ledger (all)
+-- 6. Business transactions (events: INVOICE_CREATED, PAYMENT_RECEIVED, INVOICE_VOIDED)
 SELECT id, invoice_id, payment_id, type, description, amount, currency, created_at
 FROM transactions
 ORDER BY created_at DESC;
 
 -- 7. Transactions for one invoice
 SELECT * FROM transactions
+WHERE invoice_id = '{{invoiceId}}'
+ORDER BY created_at;
+
+-- 7b. Ledger entries — double-entry debit/credit (all)
+SELECT id, invoice_id, payment_id, transaction_id, account, entry_side, amount, currency, description, created_at
+FROM ledger_entries
+ORDER BY created_at DESC;
+
+-- 7c. Ledger entries for one invoice
+SELECT account, entry_side, amount, currency, description, created_at
+FROM ledger_entries
 WHERE invoice_id = '{{invoiceId}}'
 ORDER BY created_at;
 

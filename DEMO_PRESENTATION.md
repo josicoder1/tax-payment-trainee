@@ -40,7 +40,8 @@ You (Postman)  →  sends request  →  Spring Boot App  →  saves/reads  →  
 | **Payment** | Money paid against an invoice |
 | **Idempotency key** | A unique ID for a payment. If you send the same key twice, you are **not charged twice** |
 | **Audit** | A log of what happened step by step |
-| **Transaction (ledger)** | A record of business events: invoice created, payment received, invoice voided |
+| **Transaction** | A record of business events: invoice created, payment received, invoice voided |
+| **Ledger entry** | Double-entry accounting line with **DEBIT** or **CREDIT** on an account (RECEIVABLE, CASH, PENALTY, INTEREST, PRINCIPAL) |
 
 ### Payment rule (very important for demo)
 
@@ -193,7 +194,8 @@ ORDER BY table_name;
 | `invoice_status` | Status names: OPEN, PARTIALLY_PAID, PAID, VOIDED |
 | `payments` | All payment records |
 | `payment_audit` | Step-by-step log for each payment |
-| `transactions` | Business ledger (created, paid, voided) |
+| `transactions` | Business events (INVOICE_CREATED, PAYMENT_RECEIVED, INVOICE_VOIDED) |
+| `ledger_entries` | Double-entry debit/credit lines per account |
 | `outbox_events` | Events waiting to be published (advanced topic) |
 
 **Say to audience:** "Every API call you will see in Postman also leaves data in these tables."
@@ -480,7 +482,7 @@ You should see events like:
 - `REQUESTED` — payment started
 - `SUCCESS` — payment finished, payload shows `penalty=5,interest=15,principal=30`
 
-**D) Transaction ledger:**
+**D) Business transaction:**
 
 ```sql
 SELECT type, amount, payment_id
@@ -490,6 +492,17 @@ LIMIT 5;
 ```
 
 You should see `PAYMENT_RECEIVED`.
+
+**E) Ledger entries (debit/credit):**
+
+```sql
+SELECT account, entry_side, amount, description
+FROM ledger_entries
+ORDER BY created_at DESC
+LIMIT 10;
+```
+
+You should see e.g. `DEBIT CASH 50` and `CREDIT RECEIVABLE` lines for penalty, interest, principal.
 
 ---
 
@@ -705,8 +718,10 @@ Try to pay a voided invoice → app returns error. Good to show rules are enforc
 | 4 | PUT | `/api/invoices/{id}/void` | Cancel invoice |
 | 5 | POST | `/api/payments` | Pay invoice |
 | 6 | GET | `/api/payments/{id}/audit` | Payment audit log |
-| 7 | GET | `/api/transactions` | All ledger entries |
-| 8 | GET | `/api/transactions/by-invoice/{id}` | Ledger for one invoice |
+| 7 | GET | `/api/transactions` | All business transactions |
+| 8 | GET | `/api/transactions/by-invoice/{id}` | Transactions for one invoice |
+| 9 | GET | `/api/ledger-entries` | All debit/credit ledger lines |
+| 10 | GET | `/api/ledger-entries/by-invoice/{id}` | Ledger for one invoice |
 
 Full URL example: `http://localhost:8080/api/invoices`
 
@@ -746,7 +761,7 @@ Full URL example: `http://localhost:8080/api/invoices`
 > "Invoice voided. Cannot pay anymore."
 
 **Closing (30 seconds):**
-> "Every action in Postman is stored in the database. We have invoices, payments, audit logs, and a transaction ledger. This is how real payment systems keep data safe and traceable."
+> "Every action in Postman is stored in the database. We have invoices, payments, audit logs, business transactions, and a double-entry ledger with debits and credits. This is how real payment systems keep data safe and traceable."
 
 ---
 
@@ -766,14 +781,16 @@ DEMO ORDER:
   5. Duplicate pay      → same paymentId, no double charge
   6. Payment audit      → REQUESTED, SUCCESS
   7. Pay 170            → status PAID
-  8. List transactions  → ledger
-  9. Create NEW invoice → then Void → status VOIDED
+  8. List transactions  → business events
+  9. List ledger entries → debit/credit lines
+  10. Create NEW invoice → then Void → status VOIDED
 
 PGADMIN QUICK CHECK:
   SELECT * FROM invoices ORDER BY id DESC LIMIT 3;
   SELECT * FROM payments ORDER BY created_at DESC LIMIT 3;
   SELECT * FROM payment_audit ORDER BY created_at DESC LIMIT 5;
   SELECT * FROM transactions ORDER BY created_at DESC LIMIT 5;
+  SELECT account, entry_side, amount FROM ledger_entries ORDER BY created_at DESC LIMIT 10;
 ```
 
 ---
