@@ -25,18 +25,66 @@ public class Payment {
     String idempotencyKey;
     // added for audit
 
-    public Payment(Money amount, String taxpayerId, String taxType, String taxPeriod, String idempotencyKey) {
-        this.id = UUID.randomUUID();
-        this.amount = amount;
-        this.taxpayerId = taxpayerId;
-        this.taxType = taxType;
-        this.taxPeriod = taxPeriod;
-        this.idempotencyKey = idempotencyKey;
-        this.status = PaymentStatus.PENDING;
-        this.createdAt = Instant.now();
-        this.referenceNumber = "REF-" + System.currentTimeMillis();
+//    public Payment(Money amount, String taxpayerId, String taxType, String taxPeriod, String idempotencyKey) {
+////        this.id = UUID.randomUUID();
+//        this.amount = amount;
+//        this.taxpayerId = taxpayerId;
+//        this.taxType = taxType;
+//        this.taxPeriod = taxPeriod;
+//        this.idempotencyKey = idempotencyKey;
+//        this.status = PaymentStatus.PENDING;
+//        this.createdAt = Instant.now();
+////        this.referenceNumber = "REF-" + System.currentTimeMillis();
+//
+//    }
 
+
+public static Payment create(
+        Money amount,
+        String taxpayerId,
+        String taxType,
+        String taxPeriod,
+        String idempotencyKey
+) {
+    Payment payment = new Payment();
+    payment.id = UUID.randomUUID();
+    payment.amount = amount;
+    payment.taxpayerId = taxpayerId;
+    payment.taxType = taxType;
+    payment.taxPeriod = taxPeriod;
+    payment.idempotencyKey = idempotencyKey;
+    payment.status = PaymentStatus.PENDING;
+    payment.createdAt = Instant.now();
+    payment.referenceNumber = "REF-" + System.currentTimeMillis();
+    return payment;
+}
+
+    public static Payment rehydrate(
+            UUID id,
+            Money amount,
+            String taxpayerId,
+            String taxType,
+            String taxPeriod,
+            PaymentStatus status,
+            Instant createdAt,
+            String referenceNumber,
+            String failureReason,
+            String idempotencyKey
+    ) {
+        Payment payment = new Payment();
+        payment.id = id;
+        payment.amount = amount;
+        payment.taxpayerId = taxpayerId;
+        payment.taxType = taxType;
+        payment.taxPeriod = taxPeriod;
+        payment.status = status;
+        payment.createdAt = createdAt;
+        payment.referenceNumber = referenceNumber;
+        payment.failureReason = failureReason;
+        payment.idempotencyKey = idempotencyKey;
+        return payment;
     }
+
 
     public void markSuccess() {
         if (this.status != PaymentStatus.PENDING) {

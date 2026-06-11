@@ -1,6 +1,4 @@
 -- Finish outbox alignment when old columns remain from a partial migration
-UPDATE outbox_events SET event_type = type WHERE event_type IS NULL AND type IS NOT NULL;
-UPDATE outbox_events SET event_data = payload WHERE event_data IS NULL AND payload IS NOT NULL;
 UPDATE outbox_events SET occurred_at = created_at WHERE occurred_at IS NULL;
 UPDATE outbox_events SET published = false WHERE published IS NULL;
 UPDATE outbox_events SET created_at = now() WHERE created_at IS NULL;

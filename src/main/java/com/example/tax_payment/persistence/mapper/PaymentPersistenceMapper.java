@@ -59,40 +59,17 @@ public class PaymentPersistenceMapper {
 
     public Payment toDomain(PaymentJpaEntity entity) {
 
-        Payment payment =
-                new Payment(
-                        new Money(
-                                entity.getAmount(),
-                                entity.getCurrency()
-                        ),
-                        entity.getTaxpayerId(),
-                        entity.getTaxType(),
-                        entity.getTaxPeriod(),
-                        entity.getIdempotencyKey()
-                );
-
-        payment.setId(entity.getId());
-
-        payment.setStatus(
-                PaymentStatus.valueOf(
-                        entity.getStatus()
-                )
-        );
-
-        payment.setCreatedAt(
-                entity.getCreatedAt()
-        );
-        payment.setIdempotencyKey(
+        return Payment.rehydrate(
+                entity.getId(),
+                new Money(entity.getAmount(), entity.getCurrency()),
+                entity.getTaxpayerId(),
+                entity.getTaxType(),
+                entity.getTaxPeriod(),
+                PaymentStatus.valueOf(entity.getStatus()),
+                entity.getCreatedAt(),
+                entity.getReferenceNumber(),
+                entity.getFailureReason(),
                 entity.getIdempotencyKey()
         );
-        payment.setReferenceNumber(
-                entity.getReferenceNumber()
-        );
-
-        payment.setFailureReason(
-                entity.getFailureReason()
-        );
-
-        return payment;
     }
 }
