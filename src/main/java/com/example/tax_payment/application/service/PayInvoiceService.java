@@ -3,12 +3,7 @@ package com.example.tax_payment.application.service;
 import com.example.tax_payment.application.command.PayInvoiceCommand;
 import com.example.tax_payment.application.mapper.PaymentResultMapper;
 import com.example.tax_payment.application.port.inbound.PayInvoiceUseCase;
-import com.example.tax_payment.application.port.outbound.EventPublisherPort;
-import com.example.tax_payment.application.port.outbound.PaymentAuditRepositoryPort;
-import com.example.tax_payment.application.port.outbound.InvoiceRepositoryPort;
-import com.example.tax_payment.application.port.outbound.PaymentGatewayPort;
-import com.example.tax_payment.application.port.outbound.PaymentRepositoryPort;
-import com.example.tax_payment.application.port.outbound.TransactionRepositoryPort;
+import com.example.tax_payment.application.port.outbound.*;
 import com.example.tax_payment.application.result.PaymentResult;
 import com.example.tax_payment.domain.model.Invoice;
 import com.example.tax_payment.domain.model.Payment;
@@ -20,7 +15,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @Transactional
@@ -37,6 +31,7 @@ public class PayInvoiceService implements PayInvoiceUseCase {
 
     private final PaymentAllocationService allocationService;
     private final PaymentResultMapper paymentResultMapper;
+    private final LedgerService ledgerService;
 
     public PayInvoiceService(
             InvoiceRepositoryPort invoiceRepository,
@@ -47,8 +42,8 @@ public class PayInvoiceService implements PayInvoiceUseCase {
             TransactionRepositoryPort transactionRepository,
             PaymentAllocationService allocationService,
             PaymentResultMapper paymentResultMapper,
-            InvoiceAuditService invoiceAuditService
-
+            InvoiceAuditService invoiceAuditService,
+            LedgerService ledgerService
     ) {
         this.invoiceRepository = invoiceRepository;
         this.paymentRepository = paymentRepository;
@@ -59,18 +54,17 @@ public class PayInvoiceService implements PayInvoiceUseCase {
         this.allocationService = allocationService;
         this.paymentResultMapper = paymentResultMapper;
         this.invoiceAuditService = invoiceAuditService;
-
+        this.ledgerService = ledgerService;
     }
 
     @Override
     public PaymentResult pay(PayInvoiceCommand command) {
+
         Optional<Payment> existingPayment =
-                paymentRepository.findByIdempotencyKey(
-                        command.idempotencyKey()
-                );
+                paymentRepository.findByIdempotencyKey(command.idempotencyKey());
 
         if (existingPayment.isPresent()) {
-            // record duplicate request as audit (no new processing occurs)
+
             try {
                 paymentAuditRepository.saveAudit(
                         null,
@@ -82,29 +76,16 @@ public class PayInvoiceService implements PayInvoiceUseCase {
                         command.idempotencyKey(),
                         null
                 );
-            } catch (Exception ignore) {
-                // audit failures should not block normal idempotent response
-            }
+            } catch (Exception ignored) {}
 
-            return paymentResultMapper.toResult(
-                    existingPayment.get(),
-                    null
-            );
+            return paymentResultMapper.toResult(existingPayment.get(), null);
         }
 
         Invoice invoice = invoiceRepository.findById(command.invoiceId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException("Invoice not found")
-                );
+                .orElseThrow(() -> new IllegalArgumentException("Invoice not found"));
 
+        Money paymentMoney = new Money(command.amount(), command.currency());
 
-
-        Money paymentMoney = new Money(
-                command.amount(),
-                command.currency()
-        );
-
-        // Payment can still carry TIN for audit (OK)
         Payment payment = new Payment(
                 paymentMoney,
                 invoice.getTaxpayerTin(),
@@ -113,7 +94,6 @@ public class PayInvoiceService implements PayInvoiceUseCase {
                 command.idempotencyKey()
         );
 
-        // audit: payment requested
         try {
             paymentAuditRepository.saveAudit(
                     null,
@@ -125,63 +105,70 @@ public class PayInvoiceService implements PayInvoiceUseCase {
                     command.idempotencyKey(),
                     null
             );
-        } catch (Exception ignore) {
-            // do not fail the flow for audit write issues
-        }
+        } catch (Exception ignored) {}
 
         boolean success = gatewayPort.process(payment);
 
         if (!success) {
+
             payment.markFailed("Gateway processing failed");
-            paymentRepository.save(payment);
+            Payment failedPayment = paymentRepository.save(payment);
+
             try {
                 paymentAuditRepository.saveAudit(
                         null,
-                        payment.getId(),
+                        failedPayment.getId(),
                         "FAILED",
                         "PENDING",
-                        payment.getStatus().name(),
-                        payment.getFailureReason(),
-                        payment.getIdempotencyKey(),
+                        failedPayment.getStatus().name(),
+                        failedPayment.getFailureReason(),
+                        failedPayment.getIdempotencyKey(),
                         null
                 );
-            } catch (Exception ignore) {
-            }
-            return paymentResultMapper.toResult(payment, null);
+            } catch (Exception ignored) {}
+
+            return paymentResultMapper.toResult(failedPayment, null);
         }
 
         PaymentAllocation allocation =
                 allocationService.allocate(invoice, paymentMoney);
-        String oldStatus =
-                invoice.getStatus().name();
 
+        String oldStatus = invoice.getStatus().name();
         invoice.applyPayment(allocation);
         String newStatus = invoice.getStatus().name();
 
         if (!oldStatus.equals(newStatus)) {
-            invoiceAuditService.audit(
-                    invoice.getId(),
-                    oldStatus,
-                    newStatus
-            );
+            invoiceAuditService.audit(invoice.getId(), oldStatus, newStatus);
         }
 
         payment.markSuccess();
 
-        invoiceRepository.save(invoice);
-        paymentRepository.save(payment);
+        // 1. save payment FIRST
+        Payment savedPayment = paymentRepository.save(payment);
 
-        transactionRepository.save(
-                Transaction.paymentReceived(
-                        invoice.getId(),
-                        payment.getId(),
-                        paymentMoney
-                )
+        // 2. create transaction ONCE
+        Transaction tx = Transaction.paymentReceived(
+                invoice.getId(),
+                savedPayment.getId(),
+                paymentMoney
         );
 
+        transactionRepository.save(tx);
+
+        // 3. ledger entry (financial truth)
+        ledgerService.recordPayment(
+                savedPayment,
+                tx,
+                paymentMoney
+        );
+
+        // 4. invoice update
+        invoiceRepository.save(invoice);
+
+        // 5. events
         eventPublisher.publish(invoice.pullDomainEvents());
 
-        // audit success with allocation details
+        // 6. audit success
         try {
             String payload = allocation == null ? null :
                     String.format(
@@ -193,17 +180,16 @@ public class PayInvoiceService implements PayInvoiceUseCase {
 
             paymentAuditRepository.saveAudit(
                     null,
-                    payment.getId(),
+                    savedPayment.getId(),
                     "SUCCESS",
                     "PENDING",
-                    payment.getStatus().name(),
+                    savedPayment.getStatus().name(),
                     null,
-                    payment.getIdempotencyKey(),
+                    savedPayment.getIdempotencyKey(),
                     payload
             );
-        } catch (Exception ignore) {
-        }
+        } catch (Exception ignored) {}
 
-        return paymentResultMapper.toResult(payment, allocation);
+        return paymentResultMapper.toResult(savedPayment, allocation);
     }
 }

@@ -4,9 +4,9 @@ spring:
 
   # DataSource Configuration
   datasource:
-    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/tax_payment_db
-    username: tax_payment_user
-    password: secure_password_change_me
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/tax_payment
+    username: postgres
+    password: postgres
     driver-class-name: org.postgresql.Driver
 
   # JPA/Hibernate Configuration
