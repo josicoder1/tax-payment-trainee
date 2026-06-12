@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public record InvoiceResponse(
         UUID invoiceId,
+        String invoiceNumber,
         String taxpayerTin,
         String taxType,
         String taxPeriod,

@@ -23,6 +23,8 @@ public class Invoice {
 
     private final UUID id;
 
+    private final String invoiceNumber;
+
     private final String taxpayerTin;
 
     private final TaxTypeCode taxType;
@@ -47,6 +49,7 @@ public class Invoice {
 
     public Invoice(
             UUID id,
+            String invoiceNumber,
             String taxpayerTin,
             TaxTypeCode taxType,
             TaxPeriod taxPeriod,
@@ -56,6 +59,7 @@ public class Invoice {
     ) {
 
         this.id = Objects.requireNonNull(id);
+        this.invoiceNumber = Objects.requireNonNull(invoiceNumber);
         this.taxpayerTin = Objects.requireNonNull(taxpayerTin);
         this.taxType = Objects.requireNonNull(taxType);
         this.taxPeriod = Objects.requireNonNull(taxPeriod);
@@ -85,6 +89,10 @@ public class Invoice {
 
     public UUID getId() {
         return id;
+    }
+
+    public String getInvoiceNumber() {
+        return invoiceNumber;
     }
 
     public String getTaxpayerTin() {
@@ -152,6 +160,7 @@ public class Invoice {
 
     public static Invoice reconstitute(
             UUID id,
+            String invoiceNumber,
             String taxpayerTin,
             TaxTypeCode taxType,
             TaxPeriod taxPeriod,
@@ -166,6 +175,7 @@ public class Invoice {
 
         Invoice invoice = new Invoice(
                 id,
+                invoiceNumber,
                 taxpayerTin,
                 taxType,
                 taxPeriod,

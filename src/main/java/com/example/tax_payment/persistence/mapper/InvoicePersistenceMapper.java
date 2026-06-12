@@ -23,6 +23,7 @@ public class InvoicePersistenceMapper {
         InvoiceJpaEntity entity = new InvoiceJpaEntity();
 
         entity.setId(invoice.getId());
+        entity.setInvoiceNumber(invoice.getInvoiceNumber());
         entity.setTaxpayerTin(invoice.getTaxpayerTin());
 
         entity.setTaxType(invoice.getTaxType().value());
@@ -84,6 +85,7 @@ public class InvoicePersistenceMapper {
 
         return Invoice.reconstitute(
                 entity.getId(),
+                entity.getInvoiceNumber(),
                 entity.getTaxpayerTin(),
 
                 new TaxTypeCode(

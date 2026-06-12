@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "f5a044db-d7c7-4560-a292-0b0c6114eb1d",
 		"name": "Tax Payment API Demo",
-		"description": "Demo collection for the Tax Payment Trainee application.\n\n**Setup:**\n1. Start app: `mvn spring-boot:run`\n2. Import this collection\n3. Run requests in order (Invoices → Payments → Transactions)\n\n**Variables auto-set:**\n- `invoiceId` — after Create Invoice\n- `paymentId` — after Pay Invoice\n- `lastIdempotencyKey` — after Pay Invoice (for idempotency demo)",
+		"description": "Demo collection for the Tax Payment Trainee application.\n\n**Setup:**\n1. Start app: `mvn spring-boot:run`\n2. Import this collection\n3. Run requests in order (Invoices → Payments → Transactions)\n\n**Variables auto-set:**\n- `invoiceId` — after Create Invoice\n- `invoiceNumber` — after Create Invoice (used for payments)\n- `paymentId` — after Pay Invoice\n- `lastIdempotencyKey` — after Pay Invoice (for idempotency demo)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -41,6 +41,10 @@
 									"    if (body.invoiceId) {",
 									"        pm.collectionVariables.set('invoiceId', body.invoiceId);",
 									"        console.log('invoiceId saved:', body.invoiceId);",
+									"    }",
+									"    if (body.invoiceNumber) {",
+									"        pm.collectionVariables.set('invoiceNumber', body.invoiceNumber);",
+									"        console.log('invoiceNumber saved:', body.invoiceNumber);",
 									"    }",
 									"}",
 									"pm.test('Invoice created', function () {",
@@ -213,7 +217,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idempotencyKey\": \"{{lastIdempotencyKey}}\",\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"amount\": 50.00,\n  \"currency\": \"USD\"\n}"
+							"raw": "{\n  \"idempotencyKey\": \"{{lastIdempotencyKey}}\",\n  \"invoiceNumber\": \"{{invoiceNumber}}\",\n  \"amount\": 50.00,\n  \"currency\": \"USD\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/payments",
@@ -251,7 +255,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idempotencyKey\": \"{{lastIdempotencyKey}}\",\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"amount\": 50.00,\n  \"currency\": \"USD\"\n}"
+							"raw": "{\n  \"idempotencyKey\": \"{{lastIdempotencyKey}}\",\n  \"invoiceNumber\": \"{{invoiceNumber}}\",\n  \"amount\": 50.00,\n  \"currency\": \"USD\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/payments",
@@ -326,7 +330,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"idempotencyKey\": \"{{lastIdempotencyKey}}\",\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"amount\": 170.00,\n  \"currency\": \"USD\"\n}"
+							"raw": "{\n  \"idempotencyKey\": \"{{lastIdempotencyKey}}\",\n  \"invoiceNumber\": \"{{invoiceNumber}}\",\n  \"amount\": 170.00,\n  \"currency\": \"USD\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/payments",
@@ -408,6 +412,11 @@
 		},
 		{
 			"key": "invoiceId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "invoiceNumber",
 			"value": "",
 			"type": "string"
 		},

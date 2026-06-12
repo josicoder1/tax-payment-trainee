@@ -12,4 +12,6 @@ public interface TransactionRepositoryPort {
     List<Transaction> findAll();
 
     List<Transaction> findByInvoiceId(UUID invoiceId);
+
+    List<Transaction> findByPaymentId(UUID paymentId);
 }

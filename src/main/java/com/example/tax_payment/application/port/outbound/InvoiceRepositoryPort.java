@@ -12,5 +12,7 @@ public interface InvoiceRepositoryPort {
 
     Optional<Invoice> findById(UUID id);
 
+    Optional<Invoice> findByInvoiceNumber(String invoiceNumber);
+
     List<Invoice> findByTaxpayerTin(String taxpayerTin);
 }

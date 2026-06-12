@@ -12,6 +12,7 @@ public class InvoiceResultMapper {
 
         return new InvoiceResult(
                 invoice.getId(),
+                invoice.getInvoiceNumber(),
                 invoice.getTaxpayerTin(),
                 invoice.getTaxType().value(),
                 invoice.getTaxPeriod().label(),
@@ -35,6 +36,7 @@ public class InvoiceResultMapper {
 
         return new InvoiceSummaryResult(
                 invoice.getId(),
+                invoice.getInvoiceNumber(),
                 invoice.getTaxType().value(),
                 invoice.getTaxPeriod().label(),
                 invoice.getStatus().name(),

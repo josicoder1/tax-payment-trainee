@@ -13,5 +13,7 @@ public interface SpringDataTransactionRepository
 
     List<TransactionJpaEntity> findByInvoiceIdOrderByCreatedAtDesc(UUID invoiceId);
 
+    List<TransactionJpaEntity> findByPaymentIdOrderByCreatedAtDesc(UUID paymentId);
+
     List<TransactionJpaEntity> findByTypeOrderByCreatedAtDesc(String type);
 }

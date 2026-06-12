@@ -28,6 +28,7 @@ public class OpenPdfInvoiceAdapter implements InvoicePdfPort {
             document.add(new Paragraph("TAX INVOICE"));
             document.add(new Paragraph(" "));
 
+            document.add(new Paragraph("Invoice Number: " + invoice.getInvoiceNumber()));
             document.add(new Paragraph("Invoice ID: " + invoice.getId()));
             document.add(new Paragraph("Status: " + invoice.getStatus()));
             document.add(new Paragraph("Taxpayer TIN: " + invoice.getTaxpayerTin()));
