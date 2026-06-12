@@ -78,7 +78,15 @@ public class PayInvoiceService implements PayInvoiceUseCase {
                 );
             } catch (Exception ignored) {}
 
-            return paymentResultMapper.toResult(existingPayment.get(), null);
+            return new PaymentResult(
+                    existingPayment.get().getId(),
+                    existingPayment.get().getReferenceNumber(),
+                    "ALREADY_PAID",
+                    null,
+                    "Payment already processed",
+                    existingPayment.get().getCreatedAt(),
+                    null
+            );
         }
 
         Invoice invoice = invoiceRepository.findById(command.invoiceId())

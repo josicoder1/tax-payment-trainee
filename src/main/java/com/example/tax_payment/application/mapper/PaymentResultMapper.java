@@ -28,6 +28,7 @@ public class PaymentResultMapper {
                 payment.getReferenceNumber(),
                 payment.getStatus().name(),
                 payment.getFailureReason(),
+                "Payment processed successfully",
                 payment.getCreatedAt(),
                 allocationResult
         );

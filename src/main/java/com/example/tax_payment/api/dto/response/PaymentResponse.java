@@ -8,5 +8,6 @@ public record PaymentResponse(
         String referenceNumber,
         String status,
         String failureReason,
+        String message,
         Instant createdAt
 ) {}

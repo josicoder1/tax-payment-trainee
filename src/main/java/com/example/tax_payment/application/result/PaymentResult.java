@@ -8,6 +8,7 @@ public record PaymentResult(
         String referenceNumber,
         String status,
         String failureReason,
+        String message,
         Instant createdAt,
         AllocationResult allocation
 ) {

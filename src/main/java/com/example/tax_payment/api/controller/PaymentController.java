@@ -47,6 +47,7 @@ public class PaymentController {
                 result.referenceNumber(),
                 result.status(),
                 result.failureReason(),
+                result.message(),
                 result.createdAt()
 
         );
