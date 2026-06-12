@@ -19,6 +19,9 @@ public class InvoiceJpaEntity {
     @Id
     private UUID id;
 
+    @Column(name = "invoice_number", nullable = false, unique = true, length = 50)
+    private String invoiceNumber;
+
     private String taxpayerTin;
 
     private String taxType;

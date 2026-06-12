@@ -91,6 +91,7 @@ public class InvoiceController {
                 .map(result ->
                         new InvoiceSummaryResponse(
                                 result.invoiceId(),
+                                result.invoiceNumber(),
                                 result.taxType(),
                                 result.taxPeriod(),
                                 result.status(),
@@ -117,6 +118,7 @@ public class InvoiceController {
 
         return new InvoiceResponse(
                 result.invoiceId(),
+                result.invoiceNumber(),
                 result.taxpayerTin(),
                 result.taxType(),
                 result.taxPeriod(),

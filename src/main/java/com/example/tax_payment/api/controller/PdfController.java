@@ -26,6 +26,7 @@ public class PdfController {
     }
 
     @GetMapping("/invoices/{id}/pdf")
+
     public ResponseEntity<byte[]> invoice(@PathVariable UUID id) {
 
         byte[] pdf = invoiceUseCase.generateInvoicePdf(id);

@@ -38,6 +38,12 @@ public class InvoiceRepositoryAdapter
     }
 
     @Override
+    public Optional<Invoice> findByInvoiceNumber(String invoiceNumber) {
+        return repository.findByInvoiceNumber(invoiceNumber)
+                .map(mapper::toDomain);
+    }
+
+    @Override
     public List<Invoice> findByTaxpayerTin(
             String taxpayerTin
     ) {

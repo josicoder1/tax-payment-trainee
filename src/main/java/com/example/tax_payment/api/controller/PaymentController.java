@@ -35,7 +35,7 @@ public class PaymentController {
 
                         new PayInvoiceCommand(
                                 request.idempotencyKey(),
-                                request.invoiceId(),
+                                request.invoiceNumber(),
                                 request.amount(),
                                 request.currency()
 

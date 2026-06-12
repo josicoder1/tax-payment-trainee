@@ -42,6 +42,14 @@ public class TransactionRepositoryAdapter
                 .toList();
     }
 
+    @Override
+    public List<Transaction> findByPaymentId(UUID paymentId) {
+        return repository.findByPaymentIdOrderByCreatedAtDesc(paymentId)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
     private TransactionJpaEntity toEntity(Transaction transaction) {
         TransactionJpaEntity entity = new TransactionJpaEntity();
         entity.setId(transaction.getId());
