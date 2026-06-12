@@ -1,6 +1,7 @@
 package com.example.tax_payment.api.controller;
 
 import com.example.tax_payment.api.dto.request.CreateInvoiceRequest;
+import com.example.tax_payment.api.dto.response.InvoiceAuditResponse;
 import com.example.tax_payment.api.dto.response.InvoiceResponse;
 import com.example.tax_payment.api.dto.response.InvoiceSummaryResponse;
 import com.example.tax_payment.application.command.CreateInvoiceCommand;
@@ -13,6 +14,7 @@ import com.example.tax_payment.application.query.GetInvoiceQuery;
 import com.example.tax_payment.application.query.ListInvoicesQuery;
 import com.example.tax_payment.application.result.InvoiceResult;
 import com.example.tax_payment.application.result.InvoiceSummaryResult;
+import com.example.tax_payment.application.service.InvoiceAuditService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,17 +29,21 @@ public class InvoiceController {
     private final GetInvoiceUseCase getInvoiceUseCase;
     private final ListInvoicesUseCase listInvoicesUseCase;
     private final VoidInvoiceUseCase voidInvoiceUseCase;
+    private final InvoiceAuditService auditService;
 
     public InvoiceController(
             CreateInvoiceUseCase createInvoiceUseCase,
             GetInvoiceUseCase getInvoiceUseCase,
             ListInvoicesUseCase listInvoicesUseCase,
-            VoidInvoiceUseCase voidInvoiceUseCase
+            VoidInvoiceUseCase voidInvoiceUseCase,
+            InvoiceAuditService auditService
+
     ) {
         this.createInvoiceUseCase = createInvoiceUseCase;
         this.getInvoiceUseCase = getInvoiceUseCase;
         this.listInvoicesUseCase = listInvoicesUseCase;
         this.voidInvoiceUseCase = voidInvoiceUseCase;
+        this.auditService = auditService;
     }
 
     @PostMapping
@@ -110,7 +116,19 @@ public class InvoiceController {
                 new VoidInvoiceCommand(id)
         );
     }
-
+    @GetMapping("/{id}/audit")
+    public List<InvoiceAuditResponse> getAuditHistory(@PathVariable UUID id) {
+        return auditService.getHistory(id)
+                .stream()
+                .map(audit -> new InvoiceAuditResponse(
+                        audit.getId(),
+                        audit.getInvoiceId(),
+                        audit.getOldStatus(),
+                        audit.getNewStatus(),
+                        audit.getChangedAt()
+                ))
+                .toList();
+    }
     private InvoiceResponse toResponse(
             InvoiceResult result
     ) {
