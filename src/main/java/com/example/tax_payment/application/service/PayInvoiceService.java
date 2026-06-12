@@ -5,6 +5,7 @@ import com.example.tax_payment.application.mapper.PaymentResultMapper;
 import com.example.tax_payment.application.port.inbound.PayInvoiceUseCase;
 import com.example.tax_payment.application.port.outbound.*;
 import com.example.tax_payment.application.result.PaymentResult;
+import com.example.tax_payment.domain.exception.InvoiceNotFoundException;
 import com.example.tax_payment.domain.model.Invoice;
 import com.example.tax_payment.domain.model.Payment;
 import com.example.tax_payment.domain.model.Transaction;
@@ -81,8 +82,8 @@ public class PayInvoiceService implements PayInvoiceUseCase {
             return paymentResultMapper.toResult(existingPayment.get(), null);
         }
 
-        Invoice invoice = invoiceRepository.findById(command.invoiceId())
-                .orElseThrow(() -> new IllegalArgumentException("Invoice not found"));
+        Invoice invoice = invoiceRepository.findByInvoiceNumber(command.invoiceNumber())
+                .orElseThrow(() -> new InvoiceNotFoundException(command.invoiceNumber()));
 
         Money paymentMoney = new Money(command.amount(), command.currency());
 

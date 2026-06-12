@@ -7,4 +7,8 @@ public class InvoiceNotFoundException extends DomainException {
     public InvoiceNotFoundException(UUID id) {
         super("Invoice not found: " + id);
     }
+
+    public InvoiceNotFoundException(String invoiceNumber) {
+        super("Invoice not found: " + invoiceNumber);
+    }
 }
